@@ -46,6 +46,7 @@ const Productivity = ({ data }: ProductivityProps) => {
   const [selectedSolution, setSelectedSolution] = useState("all");
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [productivityMetrics, setProductivityMetrics] = useState<any[]>([]);
+  const [debug, setDebug] = useState(false);
 
   // Extract unique solutions for the filter dropdown
   const solutions = [...new Set(data.map(item => item.Solution))].filter(Boolean).sort();
@@ -56,6 +57,11 @@ const Productivity = ({ data }: ProductivityProps) => {
   useEffect(() => {
     // Set initial filtered data when component mounts or data changes
     setFilteredData(data);
+
+    // Log data for debugging
+    console.log("Data received:", data);
+    console.log("Staff members:", staffMembers);
+    
     // Initially apply filters to show data right away
     if (data && data.length > 0) {
       applyFilters();
@@ -72,7 +78,10 @@ const Productivity = ({ data }: ProductivityProps) => {
       // Date filters
       let dateMatches = true;
       if (startDate || endDate) {
-        const supportDate = new Date(log["Start Support"]);
+        const supportDate = log["Start Support"] ? new Date(log["Start Support"]) : null;
+        
+        if (!supportDate) return false;
+        
         const start = startDate ? new Date(startDate) : new Date(0);
         const end = endDate ? new Date(endDate) : new Date(8640000000000000);
         dateMatches = supportDate >= start && supportDate <= end;
@@ -85,18 +94,31 @@ const Productivity = ({ data }: ProductivityProps) => {
     });
 
     setFilteredData(filtered);
+    console.log("Filtered data:", filtered);
   };
 
   // Calculate productivity metrics when filtered data changes
   useEffect(() => {
-    if (!filteredData || filteredData.length === 0 || !staffMembers || staffMembers.length === 0) {
+    if (!filteredData || filteredData.length === 0) {
+      setProductivityMetrics([]);
+      console.log("No filtered data available");
+      return;
+    }
+    
+    // Get all staff members from filtered data
+    const staffsFromData = [...new Set(filteredData.map(item => item["Created By"]))].filter(Boolean);
+    console.log("Staff members from filtered data:", staffsFromData);
+    
+    if (staffsFromData.length === 0) {
+      console.log("No staff members found in filtered data");
       setProductivityMetrics([]);
       return;
     }
     
     // Group by staff member
-    const metrics = staffMembers.map(staff => {
+    const metrics = staffsFromData.map(staff => {
       const staffCalls = filteredData.filter(log => log["Created By"] === staff);
+      console.log(`Staff ${staff} has ${staffCalls.length} calls`);
       
       // Calculate total calls
       const totalCalls = staffCalls.length;
@@ -184,12 +206,11 @@ const Productivity = ({ data }: ProductivityProps) => {
         sourceCounts,
         efficiency
       };
-    })
-    .filter(metric => metric.totalCalls > 0) // Only include staff with calls
-    .sort((a, b) => b.totalCalls - a.totalCalls); // Sort by most productive
+    });
     
+    console.log("Calculated metrics:", metrics);
     setProductivityMetrics(metrics);
-  }, [filteredData, staffMembers, solutions]);
+  }, [filteredData, solutions]);
 
   // Format data for the chart
   const chartData = productivityMetrics.map(metric => {
@@ -255,17 +276,27 @@ const Productivity = ({ data }: ProductivityProps) => {
           </div>
         </div>
         
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-4">
+          <Button 
+            variant="outline" 
+            onClick={() => setDebug(!debug)} 
+            size="sm"
+          >
+            {debug ? "Hide Debug" : "Debug Info"}
+          </Button>
           <Button onClick={applyFilters}>Apply Filters</Button>
         </div>
         
-        {/* Debug info - uncomment to debug */}
-        {/* <div className="mb-4 bg-gray-100 p-2 rounded">
-          <p>Data Length: {data?.length || 0}</p>
-          <p>Filtered Data Length: {filteredData?.length || 0}</p>
-          <p>Staff Members: {staffMembers?.length || 0}</p>
-          <p>Metrics Length: {productivityMetrics?.length || 0}</p>
-        </div> */}
+        {/* Debug info */}
+        {debug && (
+          <div className="mb-4 bg-gray-100 p-2 rounded text-xs">
+            <p>Data Length: {data?.length || 0}</p>
+            <p>Filtered Data Length: {filteredData?.length || 0}</p>
+            <p>Staff Members: {staffMembers?.length || 0}</p>
+            <p>Metrics Length: {productivityMetrics?.length || 0}</p>
+            <p>Staff in Metrics: {productivityMetrics.map(m => m.staff).join(', ')}</p>
+          </div>
+        )}
         
         {/* Productivity chart */}
         <div className="h-[350px] mb-6">
@@ -319,7 +350,7 @@ const Productivity = ({ data }: ProductivityProps) => {
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-400">
-              No data available - Please upload call logs with staff information
+              No data available - Please upload call logs with "Created By" information
             </div>
           )}
         </div>
@@ -330,7 +361,7 @@ const Productivity = ({ data }: ProductivityProps) => {
             <TableCaption>Staff Productivity Metrics</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>Staff Name</TableHead>
+                <TableHead>Created By</TableHead>
                 <TableHead className="text-right">8AM-5PM</TableHead>
                 <TableHead className="text-right">5PM-10PM</TableHead>
                 <TableHead className="text-right">10PM-3AM</TableHead>
@@ -413,7 +444,7 @@ const Productivity = ({ data }: ProductivityProps) => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">No data available - Please upload call logs with staff information</TableCell>
+                  <TableCell colSpan={6} className="text-center">No data available - Please upload call logs with "Created By" information</TableCell>
                 </TableRow>
               )}
             </TableBody>
