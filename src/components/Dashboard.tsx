@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -37,7 +36,7 @@ const Dashboard = ({ data }: DashboardProps) => {
   };
 
   // Update filtered data when main data changes
-  React.useEffect(() => {
+  useEffect(() => {
     setFilteredData(data);
   }, [data]);
 

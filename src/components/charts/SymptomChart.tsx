@@ -67,7 +67,7 @@ const processSymptomData = (data) => {
   
   // Convert to chart format
   return Object.entries(symptomCounts)
-    .map(([id, value]) => ({ id, label: id, value }))
+    .map(([id, value]) => ({ id, label: id, value: Number(value) }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8); // Limit to top 8 for better visualization
 };

@@ -1,4 +1,3 @@
-
 import { ResponsiveBar } from "@nivo/bar";
 
 interface HourlyChartProps {
@@ -42,8 +41,6 @@ const HourlyChart = ({ data }: HourlyChartProps) => {
             labelSkipHeight={12}
             labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             animate={true}
-            motionStiffness={90}
-            motionDamping={15}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">

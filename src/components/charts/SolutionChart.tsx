@@ -40,8 +40,6 @@ const SolutionChart = ({ data }: SolutionChartProps) => {
             labelSkipHeight={12}
             labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             animate={true}
-            motionStiffness={90}
-            motionDamping={15}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">
@@ -69,7 +67,7 @@ const processSolutionData = (data) => {
   
   // Convert to chart format
   return Object.entries(solutionCounts)
-    .map(([solution, count]) => ({ solution, count }))
+    .map(([solution, count]) => ({ solution, count: Number(count) }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 7); // Limit to top 7 for better visualization
 };
