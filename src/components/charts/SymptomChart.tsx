@@ -29,9 +29,6 @@ const SymptomChart = ({ data }: SymptomChartProps) => {
             colors={colorTheme}
             borderWidth={1}
             borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
-            radialLabelsSkipAngle={10}
-            radialLabelsTextColor="#333333"
-            radialLabelsLinkColor={{ from: "color" }}
             arcLabelsSkipAngle={10}
             arcLabelsTextColor="#ffffff"
             arcLabelsRadiusOffset={0.4}

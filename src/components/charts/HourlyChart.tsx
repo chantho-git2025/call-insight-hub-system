@@ -137,7 +137,7 @@ const HourlyChart = ({ data }: HourlyChartProps) => {
               margin={{ top: 10, right: 10, bottom: 50, left: 50 }}
               padding={0.2}
               valueScale={{ type: "linear" }}
-              colors={{ scheme: "purpleBlue" }}
+              colors={colorTheme} // Using the same colorTheme array for consistency
               borderRadius={4}
               borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
               axisBottom={{
