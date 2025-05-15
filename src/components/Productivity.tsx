@@ -21,6 +21,18 @@ import {
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ResponsiveBar } from "@nivo/bar";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface ProductivityProps {
   data: any[];
@@ -38,6 +50,13 @@ const Productivity = ({ data }: ProductivityProps) => {
 
   // Extract unique "Created By" values
   const staffMembers = [...new Set(data.map(item => item["Created By"]))].filter(Boolean);
+
+  useEffect(() => {
+    // Set initial filtered data when component mounts or data changes
+    setFilteredData(data);
+    // Initially apply filters to show data right away
+    applyFilters();
+  }, [data]);
 
   const applyFilters = () => {
     const filtered = data.filter((log) => {
@@ -68,6 +87,27 @@ const Productivity = ({ data }: ProductivityProps) => {
       // Calculate total calls
       const totalCalls = staffCalls.length;
       
+      // Count calls by time period
+      const period8amTo5pm = staffCalls.filter(call => {
+        const hour = new Date(call["Start Support"]).getHours();
+        return hour >= 8 && hour < 17;
+      }).length;
+      
+      const period5pmTo10pm = staffCalls.filter(call => {
+        const hour = new Date(call["Start Support"]).getHours();
+        return hour >= 17 && hour < 22;
+      }).length;
+      
+      const period10pmTo3am = staffCalls.filter(call => {
+        const hour = new Date(call["Start Support"]).getHours();
+        return hour >= 22 || hour < 3;
+      }).length;
+      
+      const period3amTo8am = staffCalls.filter(call => {
+        const hour = new Date(call["Start Support"]).getHours();
+        return hour >= 3 && hour < 8;
+      }).length;
+      
       // Calculate average resolution time
       let totalDurationMinutes = 0;
       let totalDurationSeconds = 0;
@@ -92,6 +132,20 @@ const Productivity = ({ data }: ProductivityProps) => {
       solutions.forEach(solution => {
         solutionCounts[solution] = staffCalls.filter(call => call.Solution === solution).length;
       });
+
+      // Count symptoms by type
+      const symptomCounts = {};
+      const symptoms = [...new Set(staffCalls.map(call => call.Symptom))].filter(Boolean);
+      symptoms.forEach(symptom => {
+        symptomCounts[symptom] = staffCalls.filter(call => call.Symptom === symptom).length;
+      });
+
+      // Count sources
+      const sourceCounts = {};
+      const sources = [...new Set(staffCalls.map(call => call.Source))].filter(Boolean);
+      sources.forEach(source => {
+        sourceCounts[source] = staffCalls.filter(call => call.Source === source).length;
+      });
       
       // Calculate efficiency score (simple metric: calls per minute of total time spent)
       const totalMinutes = totalDurationMinutes + (totalDurationSeconds / 60);
@@ -100,8 +154,16 @@ const Productivity = ({ data }: ProductivityProps) => {
       return {
         staff,
         totalCalls,
+        periodCounts: {
+          morning: period8amTo5pm,
+          evening: period5pmTo10pm,
+          night: period10pmTo3am,
+          earlyMorning: period3amTo8am
+        },
         avgDuration,
         solutionCounts,
+        symptomCounts,
+        sourceCounts,
         efficiency
       };
     })
@@ -112,18 +174,24 @@ const Productivity = ({ data }: ProductivityProps) => {
 
   // Format data for the chart
   const chartData = productivityMetrics.map(metric => {
-    const data = {
+    return {
       staff: metric.staff,
-      "Total Calls": metric.totalCalls,
+      "8AM-5PM": metric.periodCounts.morning,
+      "5PM-10PM": metric.periodCounts.evening,
+      "10PM-3AM": metric.periodCounts.night,
+      "3AM-8AM": metric.periodCounts.earlyMorning,
+      "Total": metric.totalCalls
     };
-    
-    // Add top solutions to the chart
-    solutions.slice(0, 3).forEach(solution => {
-      data[solution] = metric.solutionCounts[solution] || 0;
-    });
-    
-    return data;
   });
+
+  // Custom colors for the chart
+  const colorTheme = [
+    "#6366F1", // Morning (8AM-5PM)
+    "#8B5CF6", // Evening (5PM-10PM)
+    "#4F46E5", // Night (10PM-3AM)
+    "#A78BFA", // Early Morning (3AM-8AM)
+    "#3B82F6"  // Total
+  ];
 
   return (
     <div className="space-y-6">
@@ -177,12 +245,12 @@ const Productivity = ({ data }: ProductivityProps) => {
           {chartData.length > 0 ? (
             <ResponsiveBar
               data={chartData}
-              keys={["Total Calls", ...solutions.slice(0, 3)]}
+              keys={["8AM-5PM", "5PM-10PM", "10PM-3AM", "3AM-8AM", "Total"]}
               indexBy="staff"
               margin={{ top: 10, right: 130, bottom: 50, left: 60 }}
               padding={0.3}
               valueScale={{ type: "linear" }}
-              colors={['#3B82F6', '#10B981', '#F59E0B', '#EF4444']}
+              colors={colorTheme}
               borderRadius={4}
               borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
               axisBottom={{
@@ -230,32 +298,100 @@ const Productivity = ({ data }: ProductivityProps) => {
         </div>
         
         {/* Productivity table */}
-        <Table>
-          <TableCaption>Staff Productivity Metrics</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Staff Name</TableHead>
-              <TableHead className="text-right">Total Calls</TableHead>
-              <TableHead className="text-right">Avg. Duration</TableHead>
-              <TableHead className="text-right">Efficiency Score</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {productivityMetrics.map((metric, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{metric.staff}</TableCell>
-                <TableCell className="text-right">{metric.totalCalls}</TableCell>
-                <TableCell className="text-right">{metric.avgDuration}</TableCell>
-                <TableCell className="text-right">{metric.efficiency}</TableCell>
-              </TableRow>
-            ))}
-            {productivityMetrics.length === 0 && (
+        <TooltipProvider>
+          <Table>
+            <TableCaption>Staff Productivity Metrics</TableCaption>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="text-center">No data available</TableCell>
+                <TableHead>Staff Name</TableHead>
+                <TableHead className="text-right">8AM-5PM</TableHead>
+                <TableHead className="text-right">5PM-10PM</TableHead>
+                <TableHead className="text-right">10PM-3AM</TableHead>
+                <TableHead className="text-right">3AM-8AM</TableHead>
+                <TableHead className="text-right">Total Count</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {productivityMetrics.length > 0 ? (
+                productivityMetrics.map((metric, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <span className="cursor-help flex items-center">
+                            {metric.staff}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="ml-1 h-4 w-4 text-gray-500" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                View detailed metrics
+                              </TooltipContent>
+                            </Tooltip>
+                          </span>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold">{metric.staff} Details</h4>
+                            <div className="text-sm">
+                              <p><span className="font-medium">Avg. Duration:</span> {metric.avgDuration}</p>
+                              <p><span className="font-medium">Efficiency Score:</span> {metric.efficiency}</p>
+                              
+                              <div className="mt-2">
+                                <p className="font-medium">Top Solutions:</p>
+                                <ul className="list-disc list-inside pl-2">
+                                  {Object.entries(metric.solutionCounts)
+                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .slice(0, 3)
+                                    .map(([solution, count]) => (
+                                      <li key={solution}>{solution}: {count}</li>
+                                    ))}
+                                </ul>
+                              </div>
+                              
+                              <div className="mt-2">
+                                <p className="font-medium">Top Symptoms:</p>
+                                <ul className="list-disc list-inside pl-2">
+                                  {Object.entries(metric.symptomCounts)
+                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .slice(0, 3)
+                                    .map(([symptom, count]) => (
+                                      <li key={symptom}>{symptom}: {count}</li>
+                                    ))}
+                                </ul>
+                              </div>
+                              
+                              <div className="mt-2">
+                                <p className="font-medium">Sources:</p>
+                                <ul className="list-disc list-inside pl-2">
+                                  {Object.entries(metric.sourceCounts)
+                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .slice(0, 3)
+                                    .map(([source, count]) => (
+                                      <li key={source}>{source}: {count}</li>
+                                    ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    </TableCell>
+                    <TableCell className="text-right">{metric.periodCounts.morning}</TableCell>
+                    <TableCell className="text-right">{metric.periodCounts.evening}</TableCell>
+                    <TableCell className="text-right">{metric.periodCounts.night}</TableCell>
+                    <TableCell className="text-right">{metric.periodCounts.earlyMorning}</TableCell>
+                    <TableCell className="text-right font-bold">{metric.totalCalls}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">No data available</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TooltipProvider>
       </Card>
     </div>
   );
