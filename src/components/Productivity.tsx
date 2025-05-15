@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ const Productivity = ({ data }: ProductivityProps) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedSolution, setSelectedSolution] = useState("all");
-  const [filteredData, setFilteredData] = useState(data);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [productivityMetrics, setProductivityMetrics] = useState<any[]>([]);
 
   // Extract unique solutions for the filter dropdown
@@ -56,10 +57,17 @@ const Productivity = ({ data }: ProductivityProps) => {
     // Set initial filtered data when component mounts or data changes
     setFilteredData(data);
     // Initially apply filters to show data right away
-    applyFilters();
+    if (data && data.length > 0) {
+      applyFilters();
+    }
   }, [data]);
 
   const applyFilters = () => {
+    if (!data || data.length === 0) {
+      setFilteredData([]);
+      return;
+    }
+    
     const filtered = data.filter((log) => {
       // Date filters
       let dateMatches = true;
@@ -81,6 +89,11 @@ const Productivity = ({ data }: ProductivityProps) => {
 
   // Calculate productivity metrics when filtered data changes
   useEffect(() => {
+    if (!filteredData || filteredData.length === 0 || !staffMembers || staffMembers.length === 0) {
+      setProductivityMetrics([]);
+      return;
+    }
+    
     // Group by staff member
     const metrics = staffMembers.map(staff => {
       const staffCalls = filteredData.filter(log => log["Created By"] === staff);
@@ -90,21 +103,25 @@ const Productivity = ({ data }: ProductivityProps) => {
       
       // Count calls by time period
       const period8amTo5pm = staffCalls.filter(call => {
+        if (!call["Start Support"]) return false;
         const hour = new Date(call["Start Support"]).getHours();
         return hour >= 8 && hour < 17;
       }).length;
       
       const period5pmTo10pm = staffCalls.filter(call => {
+        if (!call["Start Support"]) return false;
         const hour = new Date(call["Start Support"]).getHours();
         return hour >= 17 && hour < 22;
       }).length;
       
       const period10pmTo3am = staffCalls.filter(call => {
+        if (!call["Start Support"]) return false;
         const hour = new Date(call["Start Support"]).getHours();
         return hour >= 22 || hour < 3;
       }).length;
       
       const period3amTo8am = staffCalls.filter(call => {
+        if (!call["Start Support"]) return false;
         const hour = new Date(call["Start Support"]).getHours();
         return hour >= 3 && hour < 8;
       }).length;
@@ -150,7 +167,7 @@ const Productivity = ({ data }: ProductivityProps) => {
       
       // Calculate efficiency score (simple metric: calls per minute of total time spent)
       const totalMinutes = totalDurationMinutes + (totalDurationSeconds / 60);
-      const efficiency = totalMinutes > 0 ? (totalCalls / totalMinutes).toFixed(2) : 0;
+      const efficiency = totalMinutes > 0 ? (totalCalls / totalMinutes).toFixed(2) : '0';
       
       return {
         staff,
@@ -168,6 +185,7 @@ const Productivity = ({ data }: ProductivityProps) => {
         efficiency
       };
     })
+    .filter(metric => metric.totalCalls > 0) // Only include staff with calls
     .sort((a, b) => b.totalCalls - a.totalCalls); // Sort by most productive
     
     setProductivityMetrics(metrics);
@@ -241,6 +259,14 @@ const Productivity = ({ data }: ProductivityProps) => {
           <Button onClick={applyFilters}>Apply Filters</Button>
         </div>
         
+        {/* Debug info - uncomment to debug */}
+        {/* <div className="mb-4 bg-gray-100 p-2 rounded">
+          <p>Data Length: {data?.length || 0}</p>
+          <p>Filtered Data Length: {filteredData?.length || 0}</p>
+          <p>Staff Members: {staffMembers?.length || 0}</p>
+          <p>Metrics Length: {productivityMetrics?.length || 0}</p>
+        </div> */}
+        
         {/* Productivity chart */}
         <div className="h-[350px] mb-6">
           {chartData.length > 0 ? (
@@ -293,7 +319,7 @@ const Productivity = ({ data }: ProductivityProps) => {
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-400">
-              No data available
+              No data available - Please upload call logs with staff information
             </div>
           )}
         </div>
@@ -387,7 +413,7 @@ const Productivity = ({ data }: ProductivityProps) => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">No data available</TableCell>
+                  <TableCell colSpan={6} className="text-center">No data available - Please upload call logs with staff information</TableCell>
                 </TableRow>
               )}
             </TableBody>
