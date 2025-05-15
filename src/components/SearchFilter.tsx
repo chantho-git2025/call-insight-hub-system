@@ -25,10 +25,10 @@ interface SearchFilterProps {
 const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [searchField, setSearchField] = useState("phone");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [symptomFilter, setSymptomFilter] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("");
-  const [operationTypeFilter, setOperationTypeFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [symptomFilter, setSymptomFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [operationTypeFilter, setOperationTypeFilter] = useState("all");
   
   // Extract unique values for filter dropdowns
   const locations = [...new Set(data.map(item => item.Location))].filter(Boolean).sort();
@@ -69,10 +69,10 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
     
     const filteredResults = data.filter(item => {
       // First apply the dropdown filters
-      const matchesLocation = !locationFilter || item.Location === locationFilter;
-      const matchesSymptom = !symptomFilter || item.Symptom === symptomFilter;
-      const matchesSource = !sourceFilter || item["Source Name"] === sourceFilter;
-      const matchesOperationType = !operationTypeFilter || item["Service Operation Type"] === operationTypeFilter;
+      const matchesLocation = locationFilter === "all" || item.Location === locationFilter;
+      const matchesSymptom = symptomFilter === "all" || item.Symptom === symptomFilter;
+      const matchesSource = sourceFilter === "all" || item["Source Name"] === sourceFilter;
+      const matchesOperationType = operationTypeFilter === "all" || item["Service Operation Type"] === operationTypeFilter;
       
       // Then apply the search
       let itemValue = String(item[fieldToSearch] || "").toLowerCase();
@@ -87,10 +87,10 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
 
   const applyFilters = () => {
     const filteredResults = data.filter(item => {
-      const matchesLocation = !locationFilter || item.Location === locationFilter;
-      const matchesSymptom = !symptomFilter || item.Symptom === symptomFilter;
-      const matchesSource = !sourceFilter || item["Source Name"] === sourceFilter;
-      const matchesOperationType = !operationTypeFilter || item["Service Operation Type"] === operationTypeFilter;
+      const matchesLocation = locationFilter === "all" || item.Location === locationFilter;
+      const matchesSymptom = symptomFilter === "all" || item.Symptom === symptomFilter;
+      const matchesSource = sourceFilter === "all" || item["Source Name"] === sourceFilter;
+      const matchesOperationType = operationTypeFilter === "all" || item["Service Operation Type"] === operationTypeFilter;
       
       let matchesSearch = true;
       if (searchValue) {
@@ -125,10 +125,10 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
 
   const resetFilters = () => {
     setSearchValue("");
-    setLocationFilter("");
-    setSymptomFilter("");
-    setSourceFilter("");
-    setOperationTypeFilter("");
+    setLocationFilter("all");
+    setSymptomFilter("all");
+    setSourceFilter("all");
+    setOperationTypeFilter("all");
     onSearch(data);
   };
 
@@ -178,7 +178,7 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
               <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               {locations.map((location) => (
                 <SelectItem key={location} value={location}>
                   {location}
@@ -198,7 +198,7 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
               <SelectValue placeholder="Select symptom" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Symptoms</SelectItem>
+              <SelectItem value="all">All Symptoms</SelectItem>
               {symptoms.map((symptom) => (
                 <SelectItem key={symptom} value={symptom}>
                   {symptom}
@@ -218,7 +218,7 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
               <SelectValue placeholder="Select source" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Sources</SelectItem>
+              <SelectItem value="all">All Sources</SelectItem>
               {sources.map((source) => (
                 <SelectItem key={source} value={source}>
                   {source}
@@ -238,7 +238,7 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
               <SelectValue placeholder="Select service type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Service Types</SelectItem>
+              <SelectItem value="all">All Service Types</SelectItem>
               {operationTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
