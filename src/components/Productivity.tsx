@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +36,8 @@ import { Info } from "lucide-react";
 interface ProductivityProps {
   data: any[];
 }
+
+type CountsRecord = Record<string, number>;
 
 const Productivity = ({ data }: ProductivityProps) => {
   const [startDate, setStartDate] = useState("");
@@ -128,20 +129,20 @@ const Productivity = ({ data }: ProductivityProps) => {
         : "00:00";
       
       // Count solutions by type
-      const solutionCounts = {};
+      const solutionCounts: CountsRecord = {};
       solutions.forEach(solution => {
         solutionCounts[solution] = staffCalls.filter(call => call.Solution === solution).length;
       });
 
       // Count symptoms by type
-      const symptomCounts = {};
+      const symptomCounts: CountsRecord = {};
       const symptoms = [...new Set(staffCalls.map(call => call.Symptom))].filter(Boolean);
       symptoms.forEach(symptom => {
         symptomCounts[symptom] = staffCalls.filter(call => call.Symptom === symptom).length;
       });
 
       // Count sources
-      const sourceCounts = {};
+      const sourceCounts: CountsRecord = {};
       const sources = [...new Set(staffCalls.map(call => call.Source))].filter(Boolean);
       sources.forEach(source => {
         sourceCounts[source] = staffCalls.filter(call => call.Source === source).length;
@@ -341,10 +342,10 @@ const Productivity = ({ data }: ProductivityProps) => {
                                 <p className="font-medium">Top Solutions:</p>
                                 <ul className="list-disc list-inside pl-2">
                                   {Object.entries(metric.solutionCounts)
-                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .sort(([, aCount], [, bCount]) => ((bCount as number) - (aCount as number)))
                                     .slice(0, 3)
                                     .map(([solution, count]) => (
-                                      <li key={solution}>{solution}: {count}</li>
+                                      <li key={solution}>{solution}: {count as number}</li>
                                     ))}
                                 </ul>
                               </div>
@@ -353,10 +354,10 @@ const Productivity = ({ data }: ProductivityProps) => {
                                 <p className="font-medium">Top Symptoms:</p>
                                 <ul className="list-disc list-inside pl-2">
                                   {Object.entries(metric.symptomCounts)
-                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .sort(([, aCount], [, bCount]) => ((bCount as number) - (aCount as number)))
                                     .slice(0, 3)
                                     .map(([symptom, count]) => (
-                                      <li key={symptom}>{symptom}: {count}</li>
+                                      <li key={symptom}>{symptom}: {count as number}</li>
                                     ))}
                                 </ul>
                               </div>
@@ -365,10 +366,10 @@ const Productivity = ({ data }: ProductivityProps) => {
                                 <p className="font-medium">Sources:</p>
                                 <ul className="list-disc list-inside pl-2">
                                   {Object.entries(metric.sourceCounts)
-                                    .sort(([, aCount], [, bCount]) => (bCount as number) - (aCount as number))
+                                    .sort(([, aCount], [, bCount]) => ((bCount as number) - (aCount as number)))
                                     .slice(0, 3)
                                     .map(([source, count]) => (
-                                      <li key={source}>{source}: {count}</li>
+                                      <li key={source}>{source}: {count as number}</li>
                                     ))}
                                 </ul>
                               </div>
