@@ -4,6 +4,7 @@ import Dashboard from "@/components/Dashboard";
 import CallLogTable from "@/components/CallLogTable";
 import FileUpload from "@/components/FileUpload";
 import SearchFilter from "@/components/SearchFilter";
+import Productivity from "@/components/Productivity";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { convertToExcel } from "@/utils/excelUtils";
@@ -21,8 +22,14 @@ const Index = () => {
   }, [callLogs]);
 
   const handleFileUpload = (data) => {
-    setCallLogs(data);
-    setFilteredLogs(data);
+    // Add an id field to each record for easier handling in the table
+    const dataWithIds = data.map((item, index) => ({
+      id: `call-${index}`,
+      ...item
+    }));
+    
+    setCallLogs(dataWithIds);
+    setFilteredLogs(dataWithIds);
     toast({
       title: "Upload Successful",
       description: `${data.length} records have been loaded.`,
@@ -100,7 +107,7 @@ const Index = () => {
           <div className="lg:col-span-8 space-y-6">
             {/* Navigation Tabs */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-              <div className="flex border-b">
+              <div className="flex flex-wrap border-b">
                 <button
                   className={`px-4 py-3 text-sm font-medium ${
                     activeTab === "dashboard"
@@ -121,13 +128,25 @@ const Index = () => {
                 >
                   Records
                 </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium ${
+                    activeTab === "productivity"
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  onClick={() => setActiveTab("productivity")}
+                >
+                  Productivity
+                </button>
               </div>
 
               <div className="p-6">
                 {activeTab === "dashboard" ? (
                   <Dashboard data={filteredLogs} />
-                ) : (
+                ) : activeTab === "records" ? (
                   <CallLogTable data={filteredLogs} />
+                ) : (
+                  <Productivity data={filteredLogs} />
                 )}
               </div>
             </div>

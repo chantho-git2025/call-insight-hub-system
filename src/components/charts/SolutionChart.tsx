@@ -8,6 +8,9 @@ interface SolutionChartProps {
 const SolutionChart = ({ data }: SolutionChartProps) => {
   // Process data for the chart
   const processedData = processSolutionData(data);
+  
+  // Custom color scheme
+  const greenColors = ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0', '#D1FAE5'];
 
   return (
     <div className="h-full">
@@ -22,7 +25,9 @@ const SolutionChart = ({ data }: SolutionChartProps) => {
             padding={0.3}
             layout="horizontal"
             valueScale={{ type: "linear" }}
-            colors={{ scheme: "paired" }}
+            colors={greenColors}
+            borderRadius={4}
+            borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             axisBottom={{
               tickSize: 5,
               tickPadding: 5,
@@ -40,6 +45,24 @@ const SolutionChart = ({ data }: SolutionChartProps) => {
             labelSkipHeight={12}
             labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             animate={true}
+            theme={{
+              grid: {
+                line: {
+                  stroke: '#ddd',
+                  strokeWidth: 1,
+                },
+              },
+              tooltip: {
+                container: {
+                  background: 'white',
+                  color: '#333',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
+                  padding: '8px 12px',
+                },
+              },
+            }}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">

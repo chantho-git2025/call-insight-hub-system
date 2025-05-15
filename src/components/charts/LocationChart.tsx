@@ -9,6 +9,9 @@ const LocationChart = ({ data }: LocationChartProps) => {
   // Process data for the chart
   const processedData = processLocationData(data);
 
+  // Custom color theme
+  const blueColors = ['#0EA5E9', '#38BDF8', '#7DD3FC', '#BAE6FD', '#E0F2FE'];
+
   return (
     <div className="h-full">
       <h3 className="text-md font-medium mb-4">Average Support Duration by Location</h3>
@@ -21,7 +24,9 @@ const LocationChart = ({ data }: LocationChartProps) => {
             margin={{ top: 10, right: 10, bottom: 50, left: 50 }}
             padding={0.3}
             valueScale={{ type: "linear" }}
-            colors={{ scheme: "blues" }}
+            colors={blueColors}
+            borderRadius={4}
+            borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             axisBottom={{
               tickSize: 5,
               tickPadding: 5,
@@ -42,6 +47,39 @@ const LocationChart = ({ data }: LocationChartProps) => {
             labelSkipHeight={12}
             labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
             animate={true}
+            theme={{
+              grid: {
+                line: {
+                  stroke: '#ddd',
+                  strokeWidth: 1,
+                },
+              },
+              axis: {
+                legend: {
+                  text: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    fill: '#333',
+                  },
+                },
+                ticks: {
+                  text: {
+                    fontSize: 11,
+                    fill: '#333',
+                  },
+                },
+              },
+              tooltip: {
+                container: {
+                  background: 'white',
+                  color: '#333',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
+                  padding: '8px 12px',
+                },
+              },
+            }}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">

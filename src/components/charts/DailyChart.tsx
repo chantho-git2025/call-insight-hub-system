@@ -45,6 +45,9 @@ const DailyChart = ({ data }: DailyChartProps) => {
               legendOffset: -40,
               legendPosition: 'middle'
             }}
+            enableGridX={false}
+            colors={['#6366F1']}
+            lineWidth={3}
             pointSize={10}
             pointColor={{ theme: 'background' }}
             pointBorderWidth={2}
@@ -77,6 +80,39 @@ const DailyChart = ({ data }: DailyChartProps) => {
                 ]
               }
             ]}
+            theme={{
+              grid: {
+                line: {
+                  stroke: '#ddd',
+                  strokeWidth: 1,
+                },
+              },
+              axis: {
+                legend: {
+                  text: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    fill: '#333',
+                  },
+                },
+                ticks: {
+                  text: {
+                    fontSize: 11,
+                    fill: '#333',
+                  },
+                },
+              },
+              tooltip: {
+                container: {
+                  background: 'white',
+                  color: '#333',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
+                  padding: '8px 12px',
+                },
+              },
+            }}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">
@@ -115,7 +151,7 @@ const processDailyData = (data) => {
   
   return [{
     id: "calls",
-    color: "hsl(233, 70%, 50%)",
+    color: "#6366F1",
     data: dayCounts
   }];
 };
