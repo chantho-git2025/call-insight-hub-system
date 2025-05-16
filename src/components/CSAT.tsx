@@ -81,21 +81,38 @@ const CSAT = () => {
 
   // Apply filters
   useEffect(() => {
+    if (data.length === 0) {
+      setFilteredData([]);
+      return;
+    }
+    
     let result = [...data];
 
     // Apply date filter
     if (fromDate && toDate) {
       result = result.filter(item => {
-        const itemDate = new Date(item["Start Time"]);
-        return itemDate >= fromDate && itemDate <= toDate;
+        // Make sure Start Time exists before trying to create a date
+        if (!item["Start Time"]) return false;
+        
+        try {
+          const itemDate = new Date(item["Start Time"]);
+          return itemDate >= fromDate && itemDate <= toDate;
+        } catch (error) {
+          console.error("Invalid date format:", item["Start Time"]);
+          return false;
+        }
       });
     }
 
     // Apply rating filter
     if (ratingFilter !== "all") {
-      result = result.filter(item => 
-        item["Rating Point"].toString() === ratingFilter
-      );
+      result = result.filter(item => {
+        // Make sure Rating Point exists and convert to string safely
+        const rating = item["Rating Point"];
+        return rating !== null && 
+               rating !== undefined && 
+               rating.toString() === ratingFilter;
+      });
     }
 
     // Apply contact result filter
@@ -120,8 +137,12 @@ const CSAT = () => {
     const counts: Record<string, number> = {};
     
     filteredData.forEach(item => {
-      const rating = item["Rating Point"]?.toString() || "No Rating";
-      counts[rating] = (counts[rating] || 0) + 1;
+      const rating = item["Rating Point"];
+      const ratingStr = rating !== null && rating !== undefined 
+        ? rating.toString() 
+        : "No Rating";
+      
+      counts[ratingStr] = (counts[ratingStr] || 0) + 1;
     });
 
     return Object.entries(counts).map(([rating, count]) => ({
@@ -129,9 +150,12 @@ const CSAT = () => {
       value: count
     })).sort((a, b) => {
       // Sort numerically, with "No Rating" at the end
-      const aNum = a.name === "No Rating" ? -1 : parseInt(a.name);
-      const bNum = b.name === "No Rating" ? -1 : parseInt(b.name);
-      return bNum - aNum;
+      if (a.name === "No Rating") return 1;
+      if (b.name === "No Rating") return -1;
+      
+      const aNum = parseInt(a.name);
+      const bNum = parseInt(b.name);
+      return isNaN(bNum) || isNaN(aNum) ? 0 : bNum - aNum;
     });
   };
 
