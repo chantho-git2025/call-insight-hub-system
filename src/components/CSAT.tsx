@@ -1,71 +1,29 @@
 
 import { useState, useEffect } from "react";
+import { ResponsivePie } from "@nivo/pie";
+import { ResponsiveBar } from "@nivo/bar"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer } from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import FileUpload from "./CSATFileUpload";
+import { Separator } from "@/components/ui/separator";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
+import { addDays } from "date-fns";
+import CSATFileUpload from "./CSATFileUpload";
 import { useToast } from "@/components/ui/use-toast";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
-interface CSATData {
-  id: string;
-  "Survey No.": string;
-  "Created By": string;
-  "Phone": string;
-  "CID": string;
-  "AID": string;
-  "Customer Name": string;
-  "Start Time": string;
-  "End Time": string;
-  "Duration (mn:ss)": string;
-  "Survey Type": string;
-  "Contact Result": string;
-  "Question": string;
-  "Rating Point": string | number;
-  "Summary Note": string;
-  "Note": string;
-  "Solution": string;
-  "Find MKN": string;
-  "Note All Comment": string;
-}
-
 const CSAT = () => {
-  const [data, setData] = useState<CSATData[]>([]);
-  const [filteredData, setFilteredData] = useState<CSATData[]>([]);
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-  const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  const [data, setData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [fromDate, setFromDate] = useState<Date | undefined>(addDays(new Date(), -30));
+  const [toDate, setToDate] = useState<Date | undefined>(new Date());
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [contactResultFilter, setContactResultFilter] = useState<string>("all");
-  const [mknFilter, setMknFilter] = useState<string>("all");
+  const [findMknFilter, setFindMknFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  // Handle file upload success
-  const handleUploadSuccess = (uploadedData: any[]) => {
-    // Add unique IDs to the data
-    const dataWithIds = uploadedData.map((item, index) => ({
+  const handleFileUpload = (data: any[]) => {
+    // Add an id field to each record for easier handling
+    const dataWithIds = data.map((item, index) => ({
       id: `csat-${index}`,
       ...item
     }));
@@ -74,9 +32,34 @@ const CSAT = () => {
     setFilteredData(dataWithIds);
     toast({
       title: "Upload Successful",
-      description: `${dataWithIds.length} CSAT records have been loaded.`,
+      description: `${data.length} CSAT records have been loaded.`,
       variant: "default",
     });
+  };
+
+  const handleUploadError = (message: string) => {
+    toast({
+      title: "Upload Error",
+      description: message,
+      variant: "destructive",
+    });
+  };
+
+  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+    setFromDate(range.from);
+    setToDate(range.to);
+  };
+
+  const handleRatingChange = (value: string) => {
+    setRatingFilter(value);
+  };
+
+  const handleContactResultChange = (value: string) => {
+    setContactResultFilter(value);
+  };
+
+  const handleFindMknChange = (value: string) => {
+    setFindMknFilter(value);
   };
 
   // Apply filters
@@ -117,23 +100,19 @@ const CSAT = () => {
 
     // Apply contact result filter
     if (contactResultFilter !== "all") {
-      result = result.filter(item => 
-        item["Contact Result"] === contactResultFilter
-      );
+      result = result.filter(item => item["Contact Result"] === contactResultFilter);
     }
 
-    // Apply MKN filter
-    if (mknFilter !== "all") {
-      result = result.filter(item => 
-        item["Find MKN"] === mknFilter
-      );
+    // Apply find MKN filter
+    if (findMknFilter !== "all") {
+      result = result.filter(item => item["Find MKN"] === findMknFilter);
     }
 
     setFilteredData(result);
-  }, [data, fromDate, toDate, ratingFilter, contactResultFilter, mknFilter]);
+  }, [data, fromDate, toDate, ratingFilter, contactResultFilter, findMknFilter]);
 
-  // Prepare data for Rating Point chart
-  const getRatingPointChartData = () => {
+  // Calculate data for the Rating Point chart
+  const calculateRatingData = () => {
     const counts: Record<string, number> = {};
     
     filteredData.forEach(item => {
@@ -146,7 +125,9 @@ const CSAT = () => {
     });
 
     return Object.entries(counts).map(([rating, count]) => ({
-      name: rating === "No Rating" ? "No Rating" : `${rating} Stars`,
+      id: rating,
+      label: rating,
+      name: rating,
       value: count
     })).sort((a, b) => {
       // Sort numerically, with "No Rating" at the end
@@ -159,38 +140,23 @@ const CSAT = () => {
     });
   };
 
-  // Prepare data for Contact Result chart
-  const getContactResultChartData = () => {
+  // Calculate data for Find MKN chart - now as bar chart
+  const calculateFindMknData = () => {
     const counts: Record<string, number> = {};
     
     filteredData.forEach(item => {
-      const result = item["Contact Result"] || "Unknown";
-      counts[result] = (counts[result] || 0) + 1;
+      const findMkn = item["Find MKN"] || "Unknown";
+      counts[findMkn] = (counts[findMkn] || 0) + 1;
     });
 
-    return Object.entries(counts).map(([result, count]) => ({
-      name: result,
-      value: count
-    })).sort((a, b) => b.value - a.value);
-  };
-
-  // Prepare data for Find MKN chart
-  const getMknChartData = () => {
-    const counts: Record<string, number> = {};
-    
-    filteredData.forEach(item => {
-      const mkn = item["Find MKN"] || "Unknown";
-      counts[mkn] = (counts[mkn] || 0) + 1;
-    });
-
-    return Object.entries(counts).map(([mkn, count]) => ({
-      name: mkn,
-      value: count
+    return Object.entries(counts).map(([name, value]) => ({
+      name,
+      value
     }));
   };
 
   // Get unique contact results for filter dropdown
-  const getUniqueContactResults = () => {
+  const getContactResults = () => {
     const results = new Set<string>();
     data.forEach(item => {
       if (item["Contact Result"]) {
@@ -200,8 +166,8 @@ const CSAT = () => {
     return Array.from(results);
   };
 
-  // Get unique MKN values for filter dropdown
-  const getUniqueMknValues = () => {
+  // Get unique Find MKN values for filter dropdown
+  const getFindMknValues = () => {
     const values = new Set<string>();
     data.forEach(item => {
       if (item["Find MKN"]) {
@@ -212,217 +178,261 @@ const CSAT = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">Upload CSAT Data</h2>
-        <FileUpload 
-          onUploadSuccess={handleUploadSuccess} 
-          onUploadError={(msg) => toast({
-            title: "Upload Error",
-            description: msg,
-            variant: "destructive"
-          })} 
-        />
-      </div>
+    <TabsContent value="csat" className="space-y-6">
+      {/* File Upload Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload CSAT Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CSATFileUpload 
+            onUploadSuccess={handleFileUpload} 
+            onUploadError={handleUploadError} 
+          />
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">Filters</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* Date Range Filter */}
-          <div>
-            <Label>From Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal mt-1",
-                    !fromDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {fromDate ? format(fromDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={fromDate}
-                  onSelect={setFromDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>CSAT Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Date Range Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Date Range</label>
+              <DatePickerWithRange
+                selected={{ from: fromDate, to: toDate }}
+                onSelect={handleDateRangeChange}
+              />
+            </div>
+
+            {/* Rating Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Rating</label>
+              <Select value={ratingFilter} onValueChange={handleRatingChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ratings</SelectItem>
+                  <SelectItem value="1">1 Star</SelectItem>
+                  <SelectItem value="2">2 Stars</SelectItem>
+                  <SelectItem value="3">3 Stars</SelectItem>
+                  <SelectItem value="4">4 Stars</SelectItem>
+                  <SelectItem value="5">5 Stars</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Contact Result Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Contact Result</label>
+              <Select value={contactResultFilter} onValueChange={handleContactResultChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Contact Result" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Results</SelectItem>
+                  {getContactResults().map((result) => (
+                    <SelectItem key={result} value={result}>
+                      {result}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Find MKN Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Find MKN</label>
+              <Select value={findMknFilter} onValueChange={handleFindMknChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Find MKN" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {getFindMknValues().map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Rating Chart */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Rating Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              {filteredData.length > 0 ? (
+                <ResponsivePie
+                  data={calculateRatingData()}
+                  margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                  innerRadius={0.5}
+                  padAngle={0.7}
+                  cornerRadius={3}
+                  activeOuterRadiusOffset={8}
+                  colors={{ scheme: 'nivo' }}
+                  borderWidth={1}
+                  borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                  arcLinkLabelsSkipAngle={10}
+                  arcLinkLabelsTextColor="#333333"
+                  arcLinkLabelsThickness={2}
+                  arcLinkLabelsColor={{ from: 'color' }}
+                  arcLabelsSkipAngle={10}
+                  arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
+                  legends={[
+                    {
+                      anchor: 'bottom',
+                      direction: 'row',
+                      justify: false,
+                      translateX: 0,
+                      translateY: 56,
+                      itemsSpacing: 0,
+                      itemWidth: 100,
+                      itemHeight: 18,
+                      itemTextColor: '#999',
+                      itemDirection: 'left-to-right',
+                      itemOpacity: 1,
+                      symbolSize: 18,
+                      symbolShape: 'circle',
+                      effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
+                    }
+                  ]}
                 />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div>
-            <Label>To Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal mt-1",
-                    !toDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {toDate ? format(toDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={toDate}
-                  onSelect={setToDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Rating Point Filter */}
-          <div>
-            <Label>Rating Point</Label>
-            <Select value={ratingFilter} onValueChange={setRatingFilter}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="All Ratings" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ratings</SelectItem>
-                <SelectItem value="1">1 Star</SelectItem>
-                <SelectItem value="2">2 Stars</SelectItem>
-                <SelectItem value="3">3 Stars</SelectItem>
-                <SelectItem value="4">4 Stars</SelectItem>
-                <SelectItem value="5">5 Stars</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Contact Result Filter */}
-          <div>
-            <Label>Contact Result</Label>
-            <Select value={contactResultFilter} onValueChange={setContactResultFilter}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="All Results" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Results</SelectItem>
-                {getUniqueContactResults().map(result => (
-                  <SelectItem key={result} value={result}>{result}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Find MKN Filter */}
-          <div>
-            <Label>Find MKN</Label>
-            <Select value={mknFilter} onValueChange={setMknFilter}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="All MKN" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All MKN</SelectItem>
-                {getUniqueMknValues().map(mkn => (
-                  <SelectItem key={mkn} value={mkn}>{mkn}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Rating Point Chart */}
+        {/* Summary Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Rating Point Distribution</CardTitle>
+            <CardTitle>CSAT Summary</CardTitle>
           </CardHeader>
-          <CardContent className="h-[400px]">
-            {filteredData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getRatingPointChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" name="Count" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                No data available - Please upload CSAT data
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Total Surveys</h3>
+                <p className="text-2xl font-bold">{filteredData.length}</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Contact Result Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Result Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[400px]">
-            {filteredData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getContactResultChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" name="Count" fill="#82ca9d" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                No data available - Please upload CSAT data
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Average Rating</h3>
+                <p className="text-2xl font-bold">
+                  {filteredData.length > 0
+                    ? (
+                        filteredData.reduce((acc, item) => {
+                          const rating = parseFloat(item["Rating Point"] || "0");
+                          return acc + rating;
+                        }, 0) / filteredData.length
+                      ).toFixed(1)
+                    : "N/A"}
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Find MKN Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Find MKN Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[400px]">
-            {filteredData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={getMknChartData()}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={150}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {getMknChartData().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                No data available - Please upload CSAT data
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">5-Star Ratings</h3>
+                <p className="text-2xl font-bold">
+                  {
+                    filteredData.filter(item => 
+                      item["Rating Point"] && item["Rating Point"].toString() === "5"
+                    ).length
+                  }
+                </p>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      {/* Additional Charts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Find MKN Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            {filteredData.length > 0 ? (
+              <ResponsiveBar
+                data={calculateFindMknData()}
+                keys={['value']}
+                indexBy="name"
+                margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+                padding={0.3}
+                valueScale={{ type: 'linear' }}
+                indexScale={{ type: 'band', round: true }}
+                colors={{ scheme: 'nivo' }}
+                borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                axisTop={null}
+                axisRight={null}
+                axisBottom={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: -45,
+                  legend: 'Find MKN',
+                  legendPosition: 'middle',
+                  legendOffset: 40
+                }}
+                axisLeft={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: 'Count',
+                  legendPosition: 'middle',
+                  legendOffset: -40
+                }}
+                labelSkipWidth={12}
+                labelSkipHeight={12}
+                labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                legends={[
+                  {
+                    dataFrom: 'keys',
+                    anchor: 'bottom-right',
+                    direction: 'column',
+                    justify: false,
+                    translateX: 120,
+                    translateY: 0,
+                    itemsSpacing: 2,
+                    itemWidth: 100,
+                    itemHeight: 20,
+                    itemDirection: 'left-to-right',
+                    itemOpacity: 0.85,
+                    symbolSize: 20,
+                    effects: [
+                      {
+                        on: 'hover',
+                        style: {
+                          itemOpacity: 1
+                        }
+                      }
+                    ]
+                  }
+                ]}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">No data available</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </TabsContent>
   );
 };
 

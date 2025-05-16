@@ -37,7 +37,7 @@ const FileUpload = ({ onUploadSuccess, onUploadError }: FileUploadProps) => {
       
       // Validate the expected columns
       const requiredColumns = [
-        "No", "CallID", "Create By", "Phone", "3CX Phone Number", 
+        "CallID", "Create By", "Phone", "3CX Phone Number", 
         "System", "CID", "AID", "SID", "Customer Name", "Splitter Name", 
         "Imported Date", "Start Support", "End Support", 
         "Support Duration (mn:ss)", "Source Name", "Location", "Prob#", 
@@ -51,7 +51,15 @@ const FileUpload = ({ onUploadSuccess, onUploadError }: FileUploadProps) => {
       
       // Get the keys from the first object
       const firstRow = data[0];
-      const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+      
+      // Check for missing columns - use case insensitive comparison
+      const missingColumns = requiredColumns.filter(col => {
+        // Check if any key in the firstRow matches the required column name (case insensitive)
+        return !Object.keys(firstRow).some(key => 
+          key.toLowerCase() === col.toLowerCase() || 
+          key.toLowerCase().replace(/\s+/g, '') === col.toLowerCase().replace(/\s+/g, '')
+        );
+      });
       
       if (missingColumns.length > 0) {
         throw new Error(`Missing required columns: ${missingColumns.join(", ")}`);
