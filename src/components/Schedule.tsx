@@ -8,35 +8,38 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import ScheduleFileUpload from "./ScheduleFileUpload";
+import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ScheduleEntry {
   id: string;
-  name: string;
-  date: string;
-  shifts: string;
-  position: string;
+  Name: string;
+  Date: string;
+  Shifts: string;
+  Position: string;
 }
 
 // Sample data
 const sampleScheduleData: ScheduleEntry[] = [
-  { id: "1", name: "AUN RATHA", date: "04/12/2025", shifts: "8AM-5PM", position: "CC" },
-  { id: "2", name: "Sun Hengly", date: "05/10/2025", shifts: "9PM-3AM", position: "NOC" },
-  { id: "3", name: "SEANG MENG HOUR", date: "05/09/2025", shifts: "Day Off", position: "CC" },
-  { id: "4", name: "SAM SOKHOM", date: "05/02/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "5", name: "Ly Sopholen", date: "04/03/2025", shifts: "9PM-3AM", position: "NOC" },
-  { id: "6", name: "PHANG RATHA", date: "05/02/2025", shifts: "Day Off", position: "CC" },
-  { id: "7", name: "MAO SREYNICH", date: "04/02/2025", shifts: "10AM-7PM", position: "CS" },
-  { id: "8", name: "PHANG RATHA", date: "04/14/2025", shifts: "Public Holiday", position: "CC" },
-  { id: "9", name: "SAM SOKHOM", date: "04/13/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "10", name: "SAM SOKHOM", date: "04/09/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "11", name: "MAO SREYNICH", date: "05/03/2025", shifts: "Day Off", position: "CS" },
-  { id: "12", name: "SAO CHANTHO", date: "04/13/2025", shifts: "8AM-5PM", position: "Teamleader" },
-  { id: "13", name: "PHANG RATHA", date: "05/07/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "14", name: "MAO SREYNICH", date: "04/24/2025", shifts: "10AM-7PM", position: "CS" },
-  { id: "15", name: "PHANG RATHA", date: "05/10/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "16", name: "PHANG RATHA", date: "04/07/2025", shifts: "5PM-10PM", position: "CC" },
-  { id: "17", name: "CHEA PISEY", date: "04/24/2025", shifts: "7AM-4PM", position: "CC" },
-  { id: "18", name: "CHEA USA", date: "04/14/2025", shifts: "8AM-5PM", position: "CS" }
+  { id: "1", Name: "AUN RATHA", Date: "04/12/2025", Shifts: "8AM-5PM", Position: "CC" },
+  { id: "2", Name: "Sun Hengly", Date: "05/10/2025", Shifts: "9PM-3AM", Position: "NOC" },
+  { id: "3", Name: "SEANG MENG HOUR", Date: "05/09/2025", Shifts: "Day Off", Position: "CC" },
+  { id: "4", Name: "SAM SOKHOM", Date: "05/02/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "5", Name: "Ly Sopholen", Date: "04/03/2025", Shifts: "9PM-3AM", Position: "NOC" },
+  { id: "6", Name: "PHANG RATHA", Date: "05/02/2025", Shifts: "Day Off", Position: "CC" },
+  { id: "7", Name: "MAO SREYNICH", Date: "04/02/2025", Shifts: "10AM-7PM", Position: "CS" },
+  { id: "8", Name: "PHANG RATHA", Date: "04/14/2025", Shifts: "Public Holiday", Position: "CC" },
+  { id: "9", Name: "SAM SOKHOM", Date: "04/13/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "10", Name: "SAM SOKHOM", Date: "04/09/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "11", Name: "MAO SREYNICH", Date: "05/03/2025", Shifts: "Day Off", Position: "CS" },
+  { id: "12", Name: "SAO CHANTHO", Date: "04/13/2025", Shifts: "8AM-5PM", Position: "Teamleader" },
+  { id: "13", Name: "PHANG RATHA", Date: "05/07/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "14", Name: "MAO SREYNICH", Date: "04/24/2025", Shifts: "10AM-7PM", Position: "CS" },
+  { id: "15", Name: "PHANG RATHA", Date: "05/10/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "16", Name: "PHANG RATHA", Date: "04/07/2025", Shifts: "5PM-10PM", Position: "CC" },
+  { id: "17", Name: "CHEA PISEY", Date: "04/24/2025", Shifts: "7AM-4PM", Position: "CC" },
+  { id: "18", Name: "CHEA USA", Date: "04/14/2025", Shifts: "8AM-5PM", Position: "CS" }
 ];
 
 const Schedule = () => {
@@ -45,12 +48,13 @@ const Schedule = () => {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [shiftsFilter, setShiftsFilter] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
+  const { toast } = useToast();
 
   const filteredData = scheduleData.filter(entry => {
-    const nameMatch = entry.name.toLowerCase().includes(nameFilter.toLowerCase());
-    const dateMatch = dateFilter ? entry.date === format(dateFilter, "MM/dd/yyyy") : true;
-    const shiftsMatch = entry.shifts.toLowerCase().includes(shiftsFilter.toLowerCase());
-    const positionMatch = entry.position.toLowerCase().includes(positionFilter.toLowerCase());
+    const nameMatch = entry.Name.toLowerCase().includes(nameFilter.toLowerCase());
+    const dateMatch = dateFilter ? entry.Date === format(dateFilter, "MM/dd/yyyy") : true;
+    const shiftsMatch = entry.Shifts.toLowerCase().includes(shiftsFilter.toLowerCase());
+    const positionMatch = entry.Position.toLowerCase().includes(positionFilter.toLowerCase());
     
     return nameMatch && dateMatch && shiftsMatch && positionMatch;
   });
@@ -62,117 +66,159 @@ const Schedule = () => {
     setPositionFilter("");
   };
 
+  const handleUploadSuccess = (data: any[]) => {
+    // Add an id field to each record for easier handling in the table
+    const scheduleWithIds = data.map((item, index) => ({
+      id: `schedule-${index}`,
+      ...item
+    }));
+    
+    setScheduleData(scheduleWithIds);
+    toast({
+      title: "Upload Successful",
+      description: `${data.length} schedule entries have been loaded.`,
+      variant: "default",
+    });
+  };
+
+  const handleUploadError = (message: string) => {
+    toast({
+      title: "Upload Error",
+      description: message,
+      variant: "destructive",
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">Staff Schedule</h2>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div>
-            <label htmlFor="name-filter" className="block text-sm font-medium mb-1">
-              Name
-            </label>
-            <Input
-              id="name-filter"
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              placeholder="Filter by name..."
+      <Tabs defaultValue="schedule" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="upload">Upload Schedule</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Upload Schedule Data</h2>
+            <ScheduleFileUpload 
+              onUploadSuccess={handleUploadSuccess} 
+              onUploadError={handleUploadError} 
             />
           </div>
+        </TabsContent>
+        
+        <TabsContent value="schedule">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Staff Schedule</h2>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Date
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left",
-                    !dateFilter && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateFilter}
-                  onSelect={setDateFilter}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <div>
+                <label htmlFor="name-filter" className="block text-sm font-medium mb-1">
+                  Name
+                </label>
+                <Input
+                  id="name-filter"
+                  value={nameFilter}
+                  onChange={(e) => setNameFilter(e.target.value)}
+                  placeholder="Filter by name..."
                 />
-              </PopoverContent>
-            </Popover>
-          </div>
+              </div>
 
-          <div>
-            <label htmlFor="shifts-filter" className="block text-sm font-medium mb-1">
-              Shifts
-            </label>
-            <Input
-              id="shifts-filter"
-              value={shiftsFilter}
-              onChange={(e) => setShiftsFilter(e.target.value)}
-              placeholder="Filter by shifts..."
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Date
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left",
+                        !dateFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFilter}
+                      onSelect={setDateFilter}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          <div>
-            <label htmlFor="position-filter" className="block text-sm font-medium mb-1">
-              Position
-            </label>
-            <Input
-              id="position-filter"
-              value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value)}
-              placeholder="Filter by position..."
-            />
-          </div>
+              <div>
+                <label htmlFor="shifts-filter" className="block text-sm font-medium mb-1">
+                  Shifts
+                </label>
+                <Input
+                  id="shifts-filter"
+                  value={shiftsFilter}
+                  onChange={(e) => setShiftsFilter(e.target.value)}
+                  placeholder="Filter by shifts..."
+                />
+              </div>
 
-          <div className="flex items-end">
-            <Button onClick={clearFilters} variant="outline" className="w-full">
-              Clear Filters
-            </Button>
-          </div>
-        </div>
+              <div>
+                <label htmlFor="position-filter" className="block text-sm font-medium mb-1">
+                  Position
+                </label>
+                <Input
+                  id="position-filter"
+                  value={positionFilter}
+                  onChange={(e) => setPositionFilter(e.target.value)}
+                  placeholder="Filter by position..."
+                />
+              </div>
 
-        {/* Schedule Table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-medium">Name</TableHead>
-                <TableHead className="font-medium">Date</TableHead>
-                <TableHead className="font-medium">Shifts</TableHead>
-                <TableHead className="font-medium">Position</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.length > 0 ? (
-                filteredData.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>{entry.name}</TableCell>
-                    <TableCell>{entry.date}</TableCell>
-                    <TableCell>{entry.shifts}</TableCell>
-                    <TableCell>{entry.position}</TableCell>
+              <div className="flex items-end">
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+
+            {/* Schedule Table */}
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-medium">Name</TableHead>
+                    <TableHead className="font-medium">Date</TableHead>
+                    <TableHead className="font-medium">Shifts</TableHead>
+                    <TableHead className="font-medium">Position</TableHead>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                    No schedule entries found matching your filters.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.length > 0 ? (
+                    filteredData.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>{entry.Name}</TableCell>
+                        <TableCell>{entry.Date}</TableCell>
+                        <TableCell>{entry.Shifts}</TableCell>
+                        <TableCell>{entry.Position}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                        No schedule entries found matching your filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
