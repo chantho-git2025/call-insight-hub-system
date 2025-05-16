@@ -5,6 +5,8 @@ import CallLogTable from "@/components/CallLogTable";
 import FileUpload from "@/components/FileUpload";
 import SearchFilter from "@/components/SearchFilter";
 import Productivity from "@/components/Productivity";
+import CSAT from "@/components/CSAT";
+import Schedule from "@/components/Schedule";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { convertToExcel } from "@/utils/excelUtils";
@@ -138,6 +140,26 @@ const Index = () => {
                 >
                   Productivity
                 </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium ${
+                    activeTab === "csat"
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  onClick={() => setActiveTab("csat")}
+                >
+                  CSAT
+                </button>
+                <button
+                  className={`px-4 py-3 text-sm font-medium ${
+                    activeTab === "schedule"
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  onClick={() => setActiveTab("schedule")}
+                >
+                  Schedule
+                </button>
               </div>
 
               <div className="p-6">
@@ -145,8 +167,12 @@ const Index = () => {
                   <Dashboard data={filteredLogs} />
                 ) : activeTab === "records" ? (
                   <CallLogTable data={filteredLogs} />
-                ) : (
+                ) : activeTab === "productivity" ? (
                   <Productivity data={filteredLogs} />
+                ) : activeTab === "csat" ? (
+                  <CSAT />
+                ) : (
+                  <Schedule />
                 )}
               </div>
             </div>
