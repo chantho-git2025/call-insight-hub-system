@@ -52,13 +52,14 @@ const FileUpload = ({ onUploadSuccess, onUploadError }: FileUploadProps) => {
       // Get the keys from the first object
       const firstRow = data[0];
       
-      // Check for missing columns - use case insensitive comparison
+      // Check for missing columns - use case insensitive comparison and remove whitespace
       const missingColumns = requiredColumns.filter(col => {
         // Check if any key in the firstRow matches the required column name (case insensitive)
-        return !Object.keys(firstRow).some(key => 
-          key.toLowerCase() === col.toLowerCase() || 
-          key.toLowerCase().replace(/\s+/g, '') === col.toLowerCase().replace(/\s+/g, '')
-        );
+        return !Object.keys(firstRow).some(key => {
+          const cleanKey = key.toLowerCase().replace(/\s+/g, '');
+          const cleanCol = col.toLowerCase().replace(/\s+/g, '');
+          return cleanKey === cleanCol || key.toLowerCase() === col.toLowerCase();
+        });
       });
       
       if (missingColumns.length > 0) {
@@ -66,7 +67,7 @@ const FileUpload = ({ onUploadSuccess, onUploadError }: FileUploadProps) => {
       }
       
       onUploadSuccess(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error parsing Excel file:", error);
       onUploadError(error.message || "Failed to parse Excel file");
     } finally {
