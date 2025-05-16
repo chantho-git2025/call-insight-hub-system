@@ -18,9 +18,11 @@ interface RatingDataItem {
   value: number;
 }
 
+// Interface for the bar chart data that satisfies BarDatum requirements
 interface FindMknDataItem {
-  id: string; // Changed from 'name' to 'id' for BarDatum compatibility
+  id: string;
   value: number;
+  [key: string]: string | number; // Add index signature for string keys
 }
 
 const CSAT = () => {
@@ -158,7 +160,8 @@ const CSAT = () => {
 
     return Object.entries(counts).map(([name, value]) => ({
       id: name,
-      value
+      value,
+      [name]: value // Add the key-value pair to satisfy BarDatum
     }));
   };
 
@@ -305,7 +308,6 @@ const CSAT = () => {
                     arcLinkLabelsTextColor="#333333"
                     arcLinkLabelsThickness={1}
                     arcLinkLabelsColor={{ from: 'color' }}
-                    arcLabelsSkipAngle={10}
                     activeOuterRadiusOffset={8}
                     legends={[
                       {
