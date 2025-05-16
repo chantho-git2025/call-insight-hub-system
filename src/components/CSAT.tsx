@@ -11,6 +11,18 @@ import { addDays } from "date-fns";
 import CSATFileUpload from "./CSATFileUpload";
 import { useToast } from "@/components/ui/use-toast";
 
+// Define the proper types for the chart data
+interface RatingDataItem {
+  id: string;
+  label: string;
+  value: number;
+}
+
+interface FindMknDataItem {
+  id: string; // Changed from 'name' to 'id' for BarDatum compatibility
+  value: number;
+}
+
 const CSAT = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -110,8 +122,8 @@ const CSAT = () => {
   }, [data, fromDate, toDate, ratingFilter, contactResultFilter, findMknFilter]);
 
   // Calculate data for the Rating Point chart
-  const calculateRatingData = () => {
-    const counts = {};
+  const calculateRatingData = (): RatingDataItem[] => {
+    const counts: Record<string, number> = {};
     
     filteredData.forEach((item) => {
       const rating = item["Rating Point"];
@@ -123,22 +135,21 @@ const CSAT = () => {
       .map(([rating, count]) => ({
         id: rating,
         label: rating,
-        name: rating,
         value: count
       }))
       .sort((a, b) => {
         // Sort numerically, with "No Rating" at the end
-        if (a.name === "No Rating") return 1;
-        if (b.name === "No Rating") return -1;
-        const aNum = parseInt(a.name);
-        const bNum = parseInt(b.name);
+        if (a.id === "No Rating") return 1;
+        if (b.id === "No Rating") return -1;
+        const aNum = parseInt(a.id);
+        const bNum = parseInt(b.id);
         return isNaN(bNum) || isNaN(aNum) ? 0 : bNum - aNum;
       });
   };
 
   // Calculate data for Find MKN chart - now as bar chart
-  const calculateFindMknData = () => {
-    const counts = {};
+  const calculateFindMknData = (): FindMknDataItem[] => {
+    const counts: Record<string, number> = {};
     
     filteredData.forEach((item) => {
       const findMkn = item["Find MKN"] || "Unknown";
@@ -146,7 +157,7 @@ const CSAT = () => {
     });
 
     return Object.entries(counts).map(([name, value]) => ({
-      name,
+      id: name,
       value
     }));
   };
@@ -286,19 +297,16 @@ const CSAT = () => {
                     colors={{ scheme: 'nivo' }}
                     borderWidth={1}
                     borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                    radialLabelsSkipAngle={10}
-                    radialLabelsTextXOffset={6}
-                    radialLabelsTextColor="#333333"
-                    radialLabelsLinkOffset={0}
-                    radialLabelsLinkDiagonalLength={16}
-                    radialLabelsLinkHorizontalLength={24}
-                    radialLabelsLinkStrokeWidth={1}
-                    radialLabelsLinkColor={{ from: 'color' }}
-                    slicesLabelsSkipAngle={10}
-                    slicesLabelsTextColor="#333333"
-                    animate={true}
-                    motionStiffness={90}
-                    motionDamping={15}
+                    arcLabelsSkipAngle={10}
+                    arcLabelsTextColor="#333333"
+                    arcLinkLabelsOffset={0}
+                    arcLinkLabelsSkipAngle={10}
+                    arcLinkLabelsTextOffset={6}
+                    arcLinkLabelsTextColor="#333333"
+                    arcLinkLabelsThickness={1}
+                    arcLinkLabelsColor={{ from: 'color' }}
+                    arcLabelsSkipAngle={10}
+                    activeOuterRadiusOffset={8}
                     legends={[
                       {
                         anchor: 'bottom',
@@ -332,8 +340,8 @@ const CSAT = () => {
                 {filteredData.length > 0 ? (
                   <ResponsiveBar
                     data={calculateFindMknData()}
+                    indexBy="id"
                     keys={['value']}
-                    indexBy="name"
                     margin={{ top: 50, right: 50, bottom: 100, left: 60 }}
                     padding={0.3}
                     colors={{ scheme: 'nivo' }}
@@ -360,8 +368,6 @@ const CSAT = () => {
                     labelSkipHeight={12}
                     labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
                     animate={true}
-                    motionStiffness={90}
-                    motionDamping={15}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
