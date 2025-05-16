@@ -10,6 +10,7 @@ import Schedule from "@/components/Schedule";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { convertToExcel } from "@/utils/excelUtils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [callLogs, setCallLogs] = useState([]);
@@ -109,72 +110,80 @@ const Index = () => {
           <div className="lg:col-span-8 space-y-6">
             {/* Navigation Tabs */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-              <div className="flex flex-wrap border-b">
-                <button
-                  className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === "dashboard"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveTab("dashboard")}
-                >
-                  Dashboard
-                </button>
-                <button
-                  className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === "records"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveTab("records")}
-                >
-                  Records
-                </button>
-                <button
-                  className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === "productivity"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveTab("productivity")}
-                >
-                  Productivity
-                </button>
-                <button
-                  className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === "csat"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveTab("csat")}
-                >
-                  CSAT
-                </button>
-                <button
-                  className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === "schedule"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveTab("schedule")}
-                >
-                  Schedule
-                </button>
-              </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <div className="border-b">
+                  <TabsList className="w-full flex flex-wrap bg-transparent h-auto p-0">
+                    <TabsTrigger 
+                      value="dashboard"
+                      className={`px-4 py-3 text-sm font-medium rounded-none ${
+                        activeTab === "dashboard" 
+                          ? "bg-primary text-white" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Dashboard
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="records"
+                      className={`px-4 py-3 text-sm font-medium rounded-none ${
+                        activeTab === "records" 
+                          ? "bg-primary text-white" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Records
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="productivity"
+                      className={`px-4 py-3 text-sm font-medium rounded-none ${
+                        activeTab === "productivity" 
+                          ? "bg-primary text-white" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Productivity
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="csat"
+                      className={`px-4 py-3 text-sm font-medium rounded-none ${
+                        activeTab === "csat" 
+                          ? "bg-primary text-white" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      CSAT
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="schedule"
+                      className={`px-4 py-3 text-sm font-medium rounded-none ${
+                        activeTab === "schedule" 
+                          ? "bg-primary text-white" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Schedule
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-              <div className="p-6">
-                {activeTab === "dashboard" ? (
-                  <Dashboard data={filteredLogs} />
-                ) : activeTab === "records" ? (
-                  <CallLogTable data={filteredLogs} />
-                ) : activeTab === "productivity" ? (
-                  <Productivity data={filteredLogs} />
-                ) : activeTab === "csat" ? (
-                  <CSAT />
-                ) : (
-                  <Schedule />
-                )}
-              </div>
+                <div className="p-6">
+                  <TabsContent value="dashboard">
+                    <Dashboard data={filteredLogs} />
+                  </TabsContent>
+                  <TabsContent value="records">
+                    <CallLogTable data={filteredLogs} />
+                  </TabsContent>
+                  <TabsContent value="productivity">
+                    <Productivity data={filteredLogs} />
+                  </TabsContent>
+                  <TabsContent value="csat">
+                    <CSAT />
+                  </TabsContent>
+                  <TabsContent value="schedule">
+                    <Schedule />
+                  </TabsContent>
+                </div>
+              </Tabs>
             </div>
           </div>
         </div>
