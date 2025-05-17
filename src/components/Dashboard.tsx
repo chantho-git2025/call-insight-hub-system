@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -401,8 +400,6 @@ const Dashboard = ({ data }: DashboardProps) => {
                   labelSkipHeight={12}
                   labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
                   animate={true}
-                  motionStiffness={90}
-                  motionDamping={15}
                   theme={{
                     axis: {
                       ticks: {
@@ -533,8 +530,6 @@ const Dashboard = ({ data }: DashboardProps) => {
                   labelSkipHeight={12}
                   labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
                   animate={true}
-                  motionStiffness={90}
-                  motionDamping={15}
                   theme={{
                     axis: {
                       ticks: {
