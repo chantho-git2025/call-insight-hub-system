@@ -526,7 +526,6 @@ const Dashboard = ({ data }: DashboardProps) => {
                     labelSkipWidth={12}
                     labelSkipHeight={12}
                     labelTextColor="#ffffff"
-                    labelSkipWidth={100}
                     animate={true}
                     theme={{
                       axis: {
