@@ -5,14 +5,17 @@ import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 
 interface SourceChartProps {
   data: any[];
+  filterSpecific?: boolean;
 }
 
-const SourceChart = ({ data }: SourceChartProps) => {
+const SourceChart = ({ data, filterSpecific = false }: SourceChartProps) => {
   // Reference for screenshot functionality
   const chartRef = useRef<HTMLDivElement>(null);
   
   // Process data for the chart
-  const processedData = processSourceData(data);
+  const processedData = filterSpecific 
+    ? processCallInMissedCallData(data)
+    : processSourceData(data);
   
   // Custom color theme
   const colorTheme = [
@@ -20,10 +23,15 @@ const SourceChart = ({ data }: SourceChartProps) => {
     '#F59E0B', '#FBBF24', '#FCD34D', '#FDE68A', '#FEF3C7'  // ambers
   ];
 
+  // Title based on mode
+  const chartTitle = filterSpecific 
+    ? "Call-In vs Missed Call Distribution"
+    : "Call Sources Distribution";
+
   return (
     <div className="h-full" ref={chartRef}>
-      <h3 className="text-3xl font-bold mb-6 text-center">Call Sources Distribution</h3>
-      <ChartScreenshot targetRef={chartRef} filename="source-distribution" />
+      <h3 className="text-3xl font-bold mb-6 text-center">{chartTitle}</h3>
+      <ChartScreenshot targetRef={chartRef} filename={filterSpecific ? "call-in-missed-distribution" : "source-distribution"} />
       <div className="h-[400px]">
         {processedData.length > 0 ? (
           <ResponsivePie
@@ -33,7 +41,7 @@ const SourceChart = ({ data }: SourceChartProps) => {
             padAngle={0.7}
             cornerRadius={3}
             activeOuterRadiusOffset={8}
-            colors={colorTheme}
+            colors={filterSpecific ? ['#6366f1', '#f97316'] : colorTheme}
             borderWidth={1}
             borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
             arcLinkLabelsSkipAngle={10}
@@ -84,7 +92,7 @@ const SourceChart = ({ data }: SourceChartProps) => {
                   borderRadius: '6px',
                   boxShadow: '0 3px 10px rgba(0, 0, 0, 0.25)',
                   padding: '10px 14px',
-                },
+                }
               },
             }}
           />
@@ -114,6 +122,30 @@ const processSourceData = (data) => {
   
   // Convert to chart format
   return Object.entries(sourceCounts)
+    .map(([id, value]) => ({ id, label: id, value }));
+};
+
+// Helper function specifically for Call-In vs Missed Call data
+const processCallInMissedCallData = (data) => {
+  if (!data || data.length === 0) return [];
+
+  // Only count Call-In and Missed Call sources
+  const callCounts = {
+    "Call-In": 0,
+    "Missed Call": 0
+  };
+  
+  data.forEach(log => {
+    const source = log["Source"];
+    if (source === "Call-In") {
+      callCounts["Call-In"]++;
+    } else if (source === "Missed Call") {
+      callCounts["Missed Call"]++;
+    }
+  });
+  
+  // Convert to chart format
+  return Object.entries(callCounts)
     .map(([id, value]) => ({ id, label: id, value }));
 };
 

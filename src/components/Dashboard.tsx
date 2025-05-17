@@ -1,11 +1,9 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveBar } from "@nivo/bar";
 import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 import SymptomChart from "@/components/charts/SymptomChart";
@@ -30,7 +28,6 @@ const Dashboard = ({ data }: DashboardProps) => {
   const [availableSymptoms, setAvailableSymptoms] = useState<string[]>([]);
   
   // Refs for chart containers to enable screenshots
-  const inboundChartRef = useRef<HTMLDivElement>(null);
   const serviceOpChartRef = useRef<HTMLDivElement>(null);
   const workingShiftChartRef = useRef<HTMLDivElement>(null);
   const topSymptomsChartRef = useRef<HTMLDivElement>(null);
@@ -94,28 +91,6 @@ const Dashboard = ({ data }: DashboardProps) => {
     }
     
     return filtered;
-  };
-
-  // Calculate inbound vs missed calls data - Fixed to properly filter by Source
-  const calculateCallSourceData = () => {
-    const counts = {
-      "Call-In": 0,
-      "Missed Call": 0
-    };
-    
-    filteredData.forEach(item => {
-      const source = item["Source"];
-      if (source === "Call-In") {
-        counts["Call-In"]++;
-      } else if (source === "Missed Call") {
-        counts["Missed Call"]++;
-      }
-    });
-    
-    return [
-      { id: "Call-In", label: "Call-In", value: counts["Call-In"] },
-      { id: "Missed Call", label: "Missed Call", value: counts["Missed Call"] }
-    ];
   };
 
   // Calculate working hours vs non-working hours
@@ -208,6 +183,9 @@ const Dashboard = ({ data }: DashboardProps) => {
     setAvailableSymptoms(getUniqueValues("Symptom"));
   }, [data]);
 
+  // Common chart container styles for consistent look
+  const chartContainerClass = "border-2 border-gray-200 rounded-2xl bg-white shadow-md p-6 h-[550px]";
+
   return (
     <div className="space-y-6">
       <Card className="p-6 shadow-lg border-2 border-gray-200">
@@ -258,103 +236,38 @@ const Dashboard = ({ data }: DashboardProps) => {
             <TabsTrigger value="suggestion" className="font-semibold py-2.5">Suggestion</TabsTrigger>
           </TabsList>
           
-          <div className="border border-gray-200 rounded-lg p-6 bg-white">
-            <TabsContent value="location" className="h-[500px]">
+          <div className={chartContainerClass}>
+            <TabsContent value="location" className="h-full">
               <LocationChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="symptom" className="h-[500px]">
+            <TabsContent value="symptom" className="h-full">
               <SymptomChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="solution" className="h-[500px]">
+            <TabsContent value="solution" className="h-full">
               <SolutionChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="source" className="h-[500px]">
+            <TabsContent value="source" className="h-full">
               <SourceChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="hourly" className="h-[500px]">
+            <TabsContent value="hourly" className="h-full">
               <HourlyChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="daily" className="h-[500px]">
+            <TabsContent value="daily" className="h-full">
               <DailyChart data={filteredData} />
             </TabsContent>
             
-            {/* Inbound & Missed Call - Fixed to correctly filter data by Source */}
-            <TabsContent value="inbound" className="h-[500px] relative">
-              <div ref={inboundChartRef} className="h-full">
-                <h3 className="font-bold text-3xl mb-8 text-center">Call-In vs Missed Call Distribution</h3>
-                <ChartScreenshot targetRef={inboundChartRef} filename="inbound-missed-calls" />
-                {filteredData.length > 0 ? (
-                  <ResponsivePie
-                    data={calculateCallSourceData()}
-                    margin={{ top: 40, right: 100, bottom: 80, left: 100 }}
-                    innerRadius={0.5}
-                    padAngle={0.7}
-                    cornerRadius={3}
-                    colors={['#6366f1', '#f97316']} // Custom colors for better visibility
-                    borderWidth={1}
-                    borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                    arcLabelsTextColor="#ffffff"
-                    arcLabelsSkipAngle={10}
-                    arcLinkLabelsOffset={3}
-                    arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextOffset={8}
-                    arcLinkLabelsTextColor="#333333"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: 'color' }}
-                    arcLabelsRadiusOffset={0.6}
-                    enableArcLinkLabels={true}
-                    arcLinkLabel={d => `${d.id}: ${d.value}`}
-                    theme={{
-                      labels: {
-                        text: {
-                          fontSize: 16,
-                          fontWeight: 700,
-                        }
-                      },
-                      legends: {
-                        text: {
-                          fontSize: 16,
-                          fontWeight: 700,
-                        }
-                      },
-                      tooltip: {
-                        container: {
-                          fontSize: 14,
-                          fontWeight: 500,
-                          padding: 12,
-                          borderRadius: 6
-                        }
-                      }
-                    }}
-                    legends={[
-                      {
-                        anchor: 'bottom',
-                        direction: 'row',
-                        translateY: 56,
-                        itemWidth: 120,
-                        itemHeight: 20,
-                        itemTextColor: '#333',
-                        symbolSize: 20,
-                        symbolShape: 'circle',
-                        effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
-                      }
-                    ]}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-xl">
-                    No data available
-                  </div>
-                )}
-              </div>
+            {/* Inbound & Missed Call - Now using the SourceChart component with filter option */}
+            <TabsContent value="inbound" className="h-full">
+              <SourceChart data={filteredData} filterSpecific={true} />
             </TabsContent>
             
             {/* Service Operation Type - Enhanced with dynamic symptom filtering */}
-            <TabsContent value="servicetype" className="h-[600px] relative">
+            <TabsContent value="servicetype" className="h-full">
               <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-lg">
                 <div>
                   <Label className="block text-base font-semibold text-gray-700 mb-2">Service Operation Type</Label>
@@ -400,7 +313,7 @@ const Dashboard = ({ data }: DashboardProps) => {
                 </div>
               </div>
               
-              <div ref={serviceOpChartRef} className="h-[500px]">
+              <div ref={serviceOpChartRef} className="h-[400px]">
                 <h3 className="font-bold text-3xl mb-8 text-center">Daily Service Operations</h3>
                 <ChartScreenshot targetRef={serviceOpChartRef} filename="service-operations" />
                 {filteredData.length > 0 ? (
@@ -488,42 +401,76 @@ const Dashboard = ({ data }: DashboardProps) => {
             </TabsContent>
             
             {/* Working Shift - Improved styling */}
-            <TabsContent value="workingshift" className="h-[500px] relative">
+            <TabsContent value="workingshift" className="h-full relative">
               <div ref={workingShiftChartRef} className="h-full">
                 <h3 className="font-bold text-3xl mb-8 text-center">Working Hours vs Non-Working Hours</h3>
                 <ChartScreenshot targetRef={workingShiftChartRef} filename="working-shift" />
                 {filteredData.length > 0 ? (
-                  <ResponsivePie
-                    data={calculateWorkingHoursData()}
-                    margin={{ top: 40, right: 100, bottom: 80, left: 100 }}
-                    innerRadius={0.5}
-                    padAngle={0.7}
-                    cornerRadius={3}
-                    colors={['#10b981', '#6366f1']} // Custom colors for better contrast
+                  <ResponsiveBar
+                    data={calculateWorkingHoursData().map(item => ({ 
+                      id: item.id, 
+                      value: item.value,
+                      label: item.label 
+                    }))}
+                    keys={['value']}
+                    indexBy="id"
+                    margin={{ top: 40, right: 80, bottom: 80, left: 60 }}
+                    padding={0.4}
+                    layout="horizontal"
+                    colors={['#10b981', '#6366f1']}
                     borderWidth={1}
                     borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                    arcLabelsTextColor="#ffffff"
-                    arcLabelsSkipAngle={10}
-                    arcLinkLabelsOffset={3}
-                    arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextOffset={8}
-                    arcLinkLabelsTextColor="#333333"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: 'color' }}
-                    arcLabelsRadiusOffset={0.6}
-                    enableArcLinkLabels={true}
-                    arcLinkLabel={d => `${d.id}: ${d.value}`}
+                    axisTop={null}
+                    axisRight={null}
+                    axisBottom={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 0,
+                      legend: 'Count',
+                      legendPosition: 'middle',
+                      legendOffset: 45
+                    }}
+                    axisLeft={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 0,
+                    }}
+                    labelSkipWidth={12}
+                    labelSkipHeight={12}
+                    labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    animate={true}
                     theme={{
-                      labels: {
-                        text: {
-                          fontSize: 16,
-                          fontWeight: 700,
+                      axis: {
+                        domain: {
+                          line: {
+                            strokeWidth: 2,
+                            stroke: '#777777'
+                          }
+                        },
+                        ticks: {
+                          line: {
+                            strokeWidth: 1,
+                            stroke: '#777777'
+                          },
+                          text: {
+                            fontSize: 14,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
+                        },
+                        legend: {
+                          text: {
+                            fontSize: 16,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
                         }
                       },
-                      legends: {
+                      labels: {
                         text: {
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: 700,
+                          fill: '#ffffff'
                         }
                       },
                       tooltip: {
@@ -535,19 +482,6 @@ const Dashboard = ({ data }: DashboardProps) => {
                         }
                       }
                     }}
-                    legends={[
-                      {
-                        anchor: 'bottom',
-                        direction: 'row',
-                        translateY: 56,
-                        itemWidth: 200,
-                        itemHeight: 20,
-                        itemTextColor: '#333',
-                        symbolSize: 20,
-                        symbolShape: 'circle',
-                        effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
-                      }
-                    ]}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 text-xl">
@@ -558,7 +492,7 @@ const Dashboard = ({ data }: DashboardProps) => {
             </TabsContent>
             
             {/* Suggestion / Top 5 Symptoms - Enhanced styling with alert colors */}
-            <TabsContent value="suggestion" className="h-[500px] relative">
+            <TabsContent value="suggestion" className="h-full relative">
               <div ref={topSymptomsChartRef} className="h-full">
                 <h3 className="font-bold text-3xl mb-8 text-center">Top 5 Symptoms</h3>
                 <ChartScreenshot targetRef={topSymptomsChartRef} filename="top-symptoms" />
@@ -569,7 +503,8 @@ const Dashboard = ({ data }: DashboardProps) => {
                     indexBy="id"
                     margin={{ top: 50, right: 50, bottom: 130, left: 60 }}
                     padding={0.3}
-                    colors={{ scheme: 'red_yellow_blue' }}
+                    layout="horizontal"
+                    colors={['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16']}
                     colorBy="indexValue"
                     borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
                     axisTop={null}
@@ -577,22 +512,21 @@ const Dashboard = ({ data }: DashboardProps) => {
                     axisBottom={{
                       tickSize: 5,
                       tickPadding: 5,
-                      tickRotation: 45,
-                      legend: 'Symptom',
+                      tickRotation: 0,
+                      legend: 'Count',
                       legendPosition: 'middle',
-                      legendOffset: 90
+                      legendOffset: 45
                     }}
                     axisLeft={{
                       tickSize: 5,
                       tickPadding: 5,
                       tickRotation: 0,
-                      legend: 'Count',
-                      legendPosition: 'middle',
-                      legendOffset: -45
+                      format: d => d.length > 30 ? `${d.substring(0, 30)}...` : d
                     }}
                     labelSkipWidth={12}
                     labelSkipHeight={12}
-                    labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    labelTextColor="#ffffff"
+                    labelSkipWidth={100}
                     animate={true}
                     theme={{
                       axis: {
