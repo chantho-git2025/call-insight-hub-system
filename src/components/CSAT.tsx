@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveBar } from "@nivo/bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { addDays } from "date-fns";
 import CSATFileUpload from "./CSATFileUpload";
 import { useToast } from "@/components/ui/use-toast";
+import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 
 // Define the proper types for the chart data
 interface RatingDataItem {
@@ -34,6 +35,10 @@ const CSAT = () => {
   const [contactResultFilter, setContactResultFilter] = useState("all");
   const [findMknFilter, setFindMknFilter] = useState("all");
   const { toast } = useToast();
+  
+  // Refs for chart containers to enable screenshots
+  const ratingChartRef = useRef<HTMLDivElement>(null);
+  const findMknChartRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (data) => {
     // Add an id field to each record for easier handling
@@ -288,8 +293,9 @@ const CSAT = () => {
             <CardHeader>
               <CardTitle>CSAT Rating Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
+            <CardContent className="relative">
+              <div ref={ratingChartRef} className="h-[350px]">
+                <ChartScreenshot targetRef={ratingChartRef} filename="csat-ratings" />
                 {filteredData.length > 0 ? (
                   <ResponsivePie
                     data={calculateRatingData()}
@@ -309,6 +315,20 @@ const CSAT = () => {
                     arcLinkLabelsThickness={1}
                     arcLinkLabelsColor={{ from: 'color' }}
                     activeOuterRadiusOffset={8}
+                    theme={{
+                      labels: {
+                        text: {
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                        }
+                      },
+                      legends: {
+                        text: {
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                        }
+                      }
+                    }}
                     legends={[
                       {
                         anchor: 'bottom',
@@ -316,7 +336,7 @@ const CSAT = () => {
                         translateY: 56,
                         itemWidth: 100,
                         itemHeight: 18,
-                        itemTextColor: '#999',
+                        itemTextColor: '#333',
                         symbolSize: 18,
                         symbolShape: 'circle',
                         effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
@@ -337,8 +357,9 @@ const CSAT = () => {
             <CardHeader>
               <CardTitle>Find MKN Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
+            <CardContent className="relative">
+              <div ref={findMknChartRef} className="h-[350px]">
+                <ChartScreenshot targetRef={findMknChartRef} filename="find-mkn" />
                 {filteredData.length > 0 ? (
                   <ResponsiveBar
                     data={calculateFindMknData()}
@@ -370,6 +391,28 @@ const CSAT = () => {
                     labelSkipHeight={12}
                     labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
                     animate={true}
+                    theme={{
+                      axis: {
+                        ticks: {
+                          text: {
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                          }
+                        },
+                        legend: {
+                          text: {
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                          }
+                        }
+                      },
+                      labels: {
+                        text: {
+                          fontSize: 12,
+                          fontWeight: 'bold'
+                        }
+                      }
+                    }}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">

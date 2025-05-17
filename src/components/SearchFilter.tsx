@@ -1,21 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 
 interface SearchFilterProps {
   data: any[];
@@ -23,163 +10,129 @@ interface SearchFilterProps {
 }
 
 const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
-  const [searchValue, setSearchValue] = useState("");
-  const [searchField, setSearchField] = useState("phone");
+  const [searchText, setSearchText] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
-  const [symptomFilter, setSymptomFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [operationTypeFilter, setOperationTypeFilter] = useState("all");
-  
-  // Extract unique values for filter dropdowns
-  const locations = [...new Set(data.map(item => item.Location))].filter(Boolean).sort();
-  const symptoms = [...new Set(data.map(item => item.Symptom))].filter(Boolean).sort();
-  const sources = [...new Set(data.map(item => item["Source Name"]))].filter(Boolean).sort();
-  const operationTypes = [...new Set(data.map(item => item["Service Operation Type"]))].filter(Boolean).sort();
+  const [symptomFilter, setSymptomFilter] = useState("all");
+  const [solutionFilter, setSolutionFilter] = useState("all");
+  const [uniqueLocations, setUniqueLocations] = useState<string[]>([]);
+  const [uniqueSources, setUniqueSources] = useState<string[]>([]);
+  const [uniqueSymptoms, setUniqueSymptoms] = useState<string[]>([]);
+  const [uniqueSolutions, setUniqueSolutions] = useState<string[]>([]);
 
+  // Extract unique field values for filters
   useEffect(() => {
-    // Apply filters whenever they change or data changes
-    applyFilters();
-  }, [data, locationFilter, symptomFilter, sourceFilter, operationTypeFilter]);
-
-  const handleSearch = () => {
-    if (!searchValue.trim()) {
-      applyFilters();
+    if (!data || data.length === 0) {
       return;
     }
 
-    let fieldToSearch;
-    switch (searchField) {
-      case "cid":
-        fieldToSearch = "CID";
-        break;
-      case "aid":
-        fieldToSearch = "AID";
-        break;
-      case "name":
-        fieldToSearch = "Customer Name";
-        break;
-      case "phone":
-        fieldToSearch = "Phone";
-        break;
-      default:
-        fieldToSearch = "Phone";
+    const locations = new Set<string>();
+    const sources = new Set<string>();
+    const symptoms = new Set<string>();
+    const solutions = new Set<string>();
+
+    data.forEach((item) => {
+      if (item.Location) locations.add(item.Location);
+      if (item.Source) sources.add(item.Source);
+      if (item.Symptom) symptoms.add(item.Symptom);
+      if (item.Solution) solutions.add(item.Solution);
+    });
+
+    setUniqueLocations(Array.from(locations));
+    setUniqueSources(Array.from(sources));
+    setUniqueSymptoms(Array.from(symptoms));
+    setUniqueSolutions(Array.from(solutions));
+  }, [data]);
+
+  // Apply all filters
+  const applyFilters = () => {
+    if (!data || data.length === 0) {
+      onSearch([]);
+      return;
     }
 
-    const searchTerm = searchValue.toLowerCase();
+    let filtered = [...data];
+
+    // Apply text search across all fields
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase();
+      filtered = filtered.filter((item) => {
+        return Object.values(item).some((value) => {
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(searchLower);
+        });
+      });
+    }
+
+    // Apply location filter
+    if (locationFilter !== "all") {
+      filtered = filtered.filter((item) => item.Location === locationFilter);
+    }
+
+    // Apply source filter
+    if (sourceFilter !== "all") {
+      filtered = filtered.filter((item) => item.Source === sourceFilter);
+    }
+
+    // Apply symptom filter
+    if (symptomFilter !== "all") {
+      filtered = filtered.filter((item) => item.Symptom === symptomFilter);
+    }
     
-    const filteredResults = data.filter(item => {
-      // First apply the dropdown filters
-      const matchesLocation = locationFilter === "all" || item.Location === locationFilter;
-      const matchesSymptom = symptomFilter === "all" || item.Symptom === symptomFilter;
-      const matchesSource = sourceFilter === "all" || item["Source Name"] === sourceFilter;
-      const matchesOperationType = operationTypeFilter === "all" || item["Service Operation Type"] === operationTypeFilter;
-      
-      // Then apply the search
-      let itemValue = String(item[fieldToSearch] || "").toLowerCase();
-      const matchesSearch = itemValue.includes(searchTerm);
-      
-      return matchesLocation && matchesSymptom && matchesSource && 
-             matchesOperationType && matchesSearch;
-    });
-    
-    onSearch(filteredResults);
+    // Apply solution filter
+    if (solutionFilter !== "all") {
+      filtered = filtered.filter((item) => item.Solution === solutionFilter);
+    }
+
+    onSearch(filtered);
   };
 
-  const applyFilters = () => {
-    const filteredResults = data.filter(item => {
-      const matchesLocation = locationFilter === "all" || item.Location === locationFilter;
-      const matchesSymptom = symptomFilter === "all" || item.Symptom === symptomFilter;
-      const matchesSource = sourceFilter === "all" || item["Source Name"] === sourceFilter;
-      const matchesOperationType = operationTypeFilter === "all" || item["Service Operation Type"] === operationTypeFilter;
-      
-      let matchesSearch = true;
-      if (searchValue) {
-        let fieldToSearch;
-        switch (searchField) {
-          case "cid":
-            fieldToSearch = "CID";
-            break;
-          case "aid":
-            fieldToSearch = "AID";
-            break;
-          case "name":
-            fieldToSearch = "Customer Name";
-            break;
-          case "phone":
-            fieldToSearch = "Phone";
-            break;
-          default:
-            fieldToSearch = "Phone";
-        }
-        
-        let itemValue = String(item[fieldToSearch] || "").toLowerCase();
-        matchesSearch = itemValue.includes(searchValue.toLowerCase());
-      }
-      
-      return matchesLocation && matchesSymptom && matchesSource && 
-             matchesOperationType && matchesSearch;
-    });
-    
-    onSearch(filteredResults);
-  };
-
+  // Reset all filters
   const resetFilters = () => {
-    setSearchValue("");
+    setSearchText("");
     setLocationFilter("all");
-    setSymptomFilter("all");
     setSourceFilter("all");
-    setOperationTypeFilter("all");
+    setSymptomFilter("all");
+    setSolutionFilter("all");
     onSearch(data);
   };
 
+  // Apply filters when any filter changes
+  useEffect(() => {
+    applyFilters();
+  }, [searchText, locationFilter, sourceFilter, symptomFilter, solutionFilter]);
+
   return (
-    <div className="space-y-6">
-      {/* Search Section */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Search By</Label>
-          <Tabs 
-            defaultValue="phone" 
-            value={searchField}
-            onValueChange={setSearchField}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="phone">Phone</TabsTrigger>
-              <TabsTrigger value="name">Name</TabsTrigger>
-              <TabsTrigger value="cid">CID</TabsTrigger>
-              <TabsTrigger value="aid">AID</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        
-        <div className="flex space-x-2">
-          <Input
-            placeholder={`Search by ${searchField}...`}
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            className="flex-1"
-          />
-          <Button onClick={handleSearch}>Search</Button>
-        </div>
+    <div className="space-y-4">
+      {/* Text Search */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Search
+        </label>
+        <Input
+          type="text"
+          placeholder="Search across all fields..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
       </div>
-      
-      {/* Filters Section */}
-      <div className="space-y-4">
-        <h3 className="font-medium">Filters</h3>
-        
-        <div className="space-y-2">
-          <Label htmlFor="location-filter">Location</Label>
-          <Select
-            value={locationFilter}
-            onValueChange={setLocationFilter}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Location Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Location
+          </label>
+          <Select 
+            value={locationFilter} 
+            onValueChange={(value) => setLocationFilter(value)}
           >
-            <SelectTrigger id="location-filter">
-              <SelectValue placeholder="Select location" />
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by location" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location) => (
+              {uniqueLocations.map((location) => (
                 <SelectItem key={location} value={location}>
                   {location}
                 </SelectItem>
@@ -187,19 +140,45 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="symptom-filter">Symptom</Label>
-          <Select
-            value={symptomFilter}
-            onValueChange={setSymptomFilter}
+
+        {/* Source Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Source
+          </label>
+          <Select 
+            value={sourceFilter} 
+            onValueChange={(value) => setSourceFilter(value)}
           >
-            <SelectTrigger id="symptom-filter">
-              <SelectValue placeholder="Select symptom" />
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              {uniqueSources.map((source) => (
+                <SelectItem key={source} value={source}>
+                  {source}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Symptom Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Symptom
+          </label>
+          <Select 
+            value={symptomFilter} 
+            onValueChange={(value) => setSymptomFilter(value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by symptom" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Symptoms</SelectItem>
-              {symptoms.map((symptom) => (
+              {uniqueSymptoms.map((symptom) => (
                 <SelectItem key={symptom} value={symptom}>
                   {symptom}
                 </SelectItem>
@@ -208,52 +187,42 @@ const SearchFilter = ({ data, onSearch }: SearchFilterProps) => {
           </Select>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="source-filter">Source</Label>
-          <Select
-            value={sourceFilter}
-            onValueChange={setSourceFilter}
+        {/* Solution Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Solution
+          </label>
+          <Select 
+            value={solutionFilter} 
+            onValueChange={(value) => setSolutionFilter(value)}
           >
-            <SelectTrigger id="source-filter">
-              <SelectValue placeholder="Select source" />
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by solution" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              {sources.map((source) => (
-                <SelectItem key={source} value={source}>
-                  {source}
+              <SelectItem value="all">All Solutions</SelectItem>
+              {uniqueSolutions.map((solution) => (
+                <SelectItem key={solution} value={solution}>
+                  {solution}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="operation-filter">Service Type</Label>
-          <Select
-            value={operationTypeFilter}
-            onValueChange={setOperationTypeFilter}
-          >
-            <SelectTrigger id="operation-filter">
-              <SelectValue placeholder="Select service type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Service Types</SelectItem>
-              {operationTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 pt-2">
         <Button 
-          variant="outline" 
-          onClick={resetFilters}
-          className="w-full mt-4"
+          onClick={applyFilters}
+          variant="default"
         >
-          Reset Filters
+          Apply Filters
+        </Button>
+        <Button 
+          onClick={resetFilters}
+          variant="outline"
+        >
+          Reset
         </Button>
       </div>
     </div>
