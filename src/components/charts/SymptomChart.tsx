@@ -1,11 +1,16 @@
 
 import { ResponsivePie } from "@nivo/pie";
+import { useRef } from "react";
+import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 
 interface SymptomChartProps {
   data: any[];
 }
 
 const SymptomChart = ({ data }: SymptomChartProps) => {
+  // Reference for screenshot functionality
+  const chartRef = useRef<HTMLDivElement>(null);
+  
   // Process data for the chart
   const processedData = processSymptomData(data);
 
@@ -16,13 +21,14 @@ const SymptomChart = ({ data }: SymptomChartProps) => {
   ];
 
   return (
-    <div className="h-full">
-      <h3 className="text-md font-medium mb-4">Distribution by Symptom</h3>
-      <div className="h-[300px]">
+    <div className="h-full" ref={chartRef}>
+      <h3 className="text-2xl font-bold mb-6 text-center">Distribution by Symptom</h3>
+      <ChartScreenshot targetRef={chartRef} filename="symptom-distribution" />
+      <div className="h-[350px]">
         {processedData.length > 0 ? (
           <ResponsivePie
             data={processedData}
-            margin={{ top: 20, right: 20, bottom: 50, left: 20 }}
+            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
             innerRadius={0.5}
             padAngle={0.7}
             cornerRadius={3}
@@ -31,31 +37,46 @@ const SymptomChart = ({ data }: SymptomChartProps) => {
             borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
             arcLabelsSkipAngle={10}
             arcLabelsTextColor="#ffffff"
-            arcLabelsRadiusOffset={0.4}
+            arcLabelsRadiusOffset={0.6}
+            enableArcLinkLabels={true}
+            arcLinkLabel={d => `${d.id}: ${d.value}`}
             legends={[
               {
                 anchor: "bottom",
                 direction: "row",
                 justify: false,
-                translateY: 30,
+                translateY: 56,
                 itemWidth: 100,
                 itemHeight: 18,
                 itemTextColor: "#333",
                 itemDirection: "left-to-right",
                 itemOpacity: 1,
-                symbolSize: 12,
+                symbolSize: 18,
                 symbolShape: "circle",
               },
             ]}
             theme={{
+              labels: {
+                text: {
+                  fontSize: 16,
+                  fontWeight: 700,
+                }
+              },
+              legends: {
+                text: {
+                  fontSize: 14,
+                  fontWeight: 600,
+                }
+              },
               tooltip: {
                 container: {
                   background: 'white',
                   color: '#333',
-                  fontSize: '12px',
-                  borderRadius: '4px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
-                  padding: '8px 12px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  boxShadow: '0 3px 10px rgba(0, 0, 0, 0.25)',
+                  padding: '10px 14px',
                 },
               },
             }}

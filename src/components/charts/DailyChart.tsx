@@ -1,22 +1,28 @@
 
 import { ResponsiveLine } from "@nivo/line";
+import { useRef } from "react";
+import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 
 interface DailyChartProps {
   data: any[];
 }
 
 const DailyChart = ({ data }: DailyChartProps) => {
+  // Reference for screenshot functionality
+  const chartRef = useRef<HTMLDivElement>(null);
+  
   // Process data for the chart
   const processedData = processDailyData(data);
 
   return (
-    <div className="h-full">
-      <h3 className="text-md font-medium mb-4">Calls by Day of Week</h3>
-      <div className="h-[300px]">
+    <div className="h-full" ref={chartRef}>
+      <h3 className="text-2xl font-bold mb-6 text-center">Calls by Day of Week</h3>
+      <ChartScreenshot targetRef={chartRef} filename="daily-trend" />
+      <div className="h-[350px]">
         {processedData.length > 0 ? (
           <ResponsiveLine
             data={processedData}
-            margin={{ top: 10, right: 50, bottom: 50, left: 50 }}
+            margin={{ top: 40, right: 80, bottom: 80, left: 60 }}
             xScale={{ type: 'point' }}
             yScale={{ 
               type: 'linear', 
@@ -25,7 +31,7 @@ const DailyChart = ({ data }: DailyChartProps) => {
               stacked: false,
               reverse: false
             }}
-            yFormat=" >-.2f"
+            yFormat=" >-.0f"
             curve="cardinal"
             axisTop={null}
             axisRight={null}
@@ -34,7 +40,7 @@ const DailyChart = ({ data }: DailyChartProps) => {
               tickPadding: 5,
               tickRotation: 0,
               legend: 'Day of Week',
-              legendOffset: 36,
+              legendOffset: 45,
               legendPosition: 'middle'
             }}
             axisLeft={{
@@ -42,15 +48,15 @@ const DailyChart = ({ data }: DailyChartProps) => {
               tickPadding: 5,
               tickRotation: 0,
               legend: 'Count',
-              legendOffset: -40,
+              legendOffset: -45,
               legendPosition: 'middle'
             }}
             enableGridX={false}
             colors={['#6366F1']}
-            lineWidth={3}
+            lineWidth={4}
             pointSize={10}
             pointColor={{ theme: 'background' }}
-            pointBorderWidth={2}
+            pointBorderWidth={3}
             pointBorderColor={{ from: 'serieColor' }}
             pointLabelYOffset={-12}
             useMesh={true}
@@ -59,14 +65,14 @@ const DailyChart = ({ data }: DailyChartProps) => {
                 anchor: 'top-right',
                 direction: 'column',
                 justify: false,
-                translateX: 50,
+                translateX: 0,
                 translateY: 0,
                 itemsSpacing: 0,
                 itemDirection: 'left-to-right',
                 itemWidth: 80,
                 itemHeight: 20,
                 itemOpacity: 0.75,
-                symbolSize: 12,
+                symbolSize: 16,
                 symbolShape: 'circle',
                 symbolBorderColor: 'rgba(0, 0, 0, .5)',
                 effects: [
@@ -81,35 +87,47 @@ const DailyChart = ({ data }: DailyChartProps) => {
               }
             ]}
             theme={{
+              axis: {
+                domain: {
+                  line: {
+                    strokeWidth: 2,
+                    stroke: '#777777'
+                  }
+                },
+                legend: {
+                  text: {
+                    fontSize: 16,
+                    fontWeight: 700,
+                    fill: '#333',
+                  },
+                },
+                ticks: {
+                  line: {
+                    strokeWidth: 1,
+                    stroke: '#777777'
+                  },
+                  text: {
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fill: '#333',
+                  },
+                },
+              },
               grid: {
                 line: {
                   stroke: '#ddd',
                   strokeWidth: 1,
                 },
               },
-              axis: {
-                legend: {
-                  text: {
-                    fontSize: 12,
-                    fontWeight: 'bold',
-                    fill: '#333',
-                  },
-                },
-                ticks: {
-                  text: {
-                    fontSize: 11,
-                    fill: '#333',
-                  },
-                },
-              },
               tooltip: {
                 container: {
                   background: 'white',
                   color: '#333',
-                  fontSize: '12px',
-                  borderRadius: '4px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
-                  padding: '8px 12px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  boxShadow: '0 3px 10px rgba(0, 0, 0, 0.25)',
+                  padding: '10px 14px',
                 },
               },
             }}

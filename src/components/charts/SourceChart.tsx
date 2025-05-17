@@ -1,11 +1,16 @@
 
 import { ResponsivePie } from "@nivo/pie";
+import { useRef } from "react";
+import { ChartScreenshot } from "@/components/ui/chart-screenshot";
 
 interface SourceChartProps {
   data: any[];
 }
 
 const SourceChart = ({ data }: SourceChartProps) => {
+  // Reference for screenshot functionality
+  const chartRef = useRef<HTMLDivElement>(null);
+  
   // Process data for the chart
   const processedData = processSourceData(data);
   
@@ -16,13 +21,14 @@ const SourceChart = ({ data }: SourceChartProps) => {
   ];
 
   return (
-    <div className="h-full">
-      <h3 className="text-md font-medium mb-4">Call Sources Distribution</h3>
-      <div className="h-[300px]">
+    <div className="h-full" ref={chartRef}>
+      <h3 className="text-2xl font-bold mb-6 text-center">Call Sources Distribution</h3>
+      <ChartScreenshot targetRef={chartRef} filename="source-distribution" />
+      <div className="h-[350px]">
         {processedData.length > 0 ? (
           <ResponsivePie
             data={processedData}
-            margin={{ top: 20, right: 20, bottom: 60, left: 20 }}
+            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
             innerRadius={0.5}
             padAngle={0.7}
             cornerRadius={3}
@@ -36,13 +42,16 @@ const SourceChart = ({ data }: SourceChartProps) => {
             arcLinkLabelsColor={{ from: "color" }}
             arcLabelsSkipAngle={10}
             arcLabelsTextColor="#ffffff"
+            arcLabelsRadiusOffset={0.6}
+            enableArcLinkLabels={true}
+            arcLinkLabel={d => `${d.id}: ${d.value}`}
             legends={[
               {
                 anchor: "bottom",
                 direction: "row",
                 justify: false,
                 translateX: 0,
-                translateY: 50,
+                translateY: 56,
                 itemsSpacing: 5,
                 itemWidth: 100,
                 itemHeight: 18,
@@ -54,14 +63,27 @@ const SourceChart = ({ data }: SourceChartProps) => {
               }
             ]}
             theme={{
+              labels: {
+                text: {
+                  fontSize: 16,
+                  fontWeight: 700,
+                }
+              },
+              legends: {
+                text: {
+                  fontSize: 14,
+                  fontWeight: 600,
+                }
+              },
               tooltip: {
                 container: {
                   background: 'white',
                   color: '#333',
-                  fontSize: '12px',
-                  borderRadius: '4px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.25)',
-                  padding: '8px 12px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  boxShadow: '0 3px 10px rgba(0, 0, 0, 0.25)',
+                  padding: '10px 14px',
                 },
               },
             }}
@@ -84,9 +106,9 @@ const processSourceData = (data) => {
   const sourceCounts = {};
   
   data.forEach(log => {
-    if (!log["Source Name"]) return;
+    if (!log["Source"]) return;
     
-    const source = log["Source Name"];
+    const source = log["Source"];
     sourceCounts[source] = (sourceCounts[source] || 0) + 1;
   });
   

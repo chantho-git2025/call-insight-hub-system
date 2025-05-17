@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,12 +170,14 @@ const Dashboard = ({ data }: DashboardProps) => {
       }
     });
     
+    // Convert to array and ensure it's ordered by day number
     return Object.entries(serviceData)
       .map(([day, count]) => ({ 
         day, 
         count,
         id: day
-      }));
+      }))
+      .sort((a, b) => parseInt(a.day) - parseInt(b.day));
   };
 
   // Update filtered data when main data changes
@@ -184,30 +187,32 @@ const Dashboard = ({ data }: DashboardProps) => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Dashboard Analytics</h2>
+      <Card className="p-6 shadow-lg border-2 border-gray-200">
+        <h2 className="text-2xl font-bold mb-6 text-primary">Dashboard Analytics</h2>
         
         {/* Date filter section */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 bg-gray-50 p-4 rounded-lg">
           <div className="flex-1">
-            <label className="text-sm text-gray-600">Start Date</label>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Start Date</label>
             <Input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              className="border-2 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex-1">
-            <label className="text-sm text-gray-600">End Date</label>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">End Date</label>
             <Input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              className="border-2 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex items-end">
             <button 
-              className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+              className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-md text-sm font-medium transition-colors"
               onClick={handleDateFilter}
             >
               Apply
@@ -216,376 +221,434 @@ const Dashboard = ({ data }: DashboardProps) => {
         </div>
         
         {/* Chart tabs */}
-        <Tabs defaultValue="location">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-6">
-            <TabsTrigger value="location">Location</TabsTrigger>
-            <TabsTrigger value="symptom">Symptom</TabsTrigger>
-            <TabsTrigger value="solution">Solution</TabsTrigger>
-            <TabsTrigger value="source">Source</TabsTrigger>
-            <TabsTrigger value="hourly">By Hour</TabsTrigger>
-            <TabsTrigger value="daily">By Day</TabsTrigger>
-            <TabsTrigger value="inbound">Inbound & Missed</TabsTrigger>
-            <TabsTrigger value="servicetype">Service Type</TabsTrigger>
-            <TabsTrigger value="workingshift">Working Shift</TabsTrigger>
-            <TabsTrigger value="suggestion">Suggestion</TabsTrigger>
+        <Tabs defaultValue="location" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-8 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="location" className="font-semibold py-2.5">Location</TabsTrigger>
+            <TabsTrigger value="symptom" className="font-semibold py-2.5">Symptom</TabsTrigger>
+            <TabsTrigger value="solution" className="font-semibold py-2.5">Solution</TabsTrigger>
+            <TabsTrigger value="source" className="font-semibold py-2.5">Source</TabsTrigger>
+            <TabsTrigger value="hourly" className="font-semibold py-2.5">By Hour</TabsTrigger>
+            <TabsTrigger value="daily" className="font-semibold py-2.5">By Day</TabsTrigger>
+            <TabsTrigger value="inbound" className="font-semibold py-2.5">Inbound & Missed</TabsTrigger>
+            <TabsTrigger value="servicetype" className="font-semibold py-2.5">Service Type</TabsTrigger>
+            <TabsTrigger value="workingshift" className="font-semibold py-2.5">Working Shift</TabsTrigger>
+            <TabsTrigger value="suggestion" className="font-semibold py-2.5">Suggestion</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="location" className="h-[350px]">
-            <LocationChart data={filteredData} />
-          </TabsContent>
-          
-          <TabsContent value="symptom" className="h-[350px]">
-            <SymptomChart data={filteredData} />
-          </TabsContent>
-          
-          <TabsContent value="solution" className="h-[350px]">
-            <SolutionChart data={filteredData} />
-          </TabsContent>
-          
-          <TabsContent value="source" className="h-[350px]">
-            <SourceChart data={filteredData} />
-          </TabsContent>
-          
-          <TabsContent value="hourly" className="h-[350px]">
-            <HourlyChart data={filteredData} />
-          </TabsContent>
-          
-          <TabsContent value="daily" className="h-[350px]">
-            <DailyChart data={filteredData} />
-          </TabsContent>
-          
-          {/* New Tabs */}
-          
-          {/* Inbound & Missed Call */}
-          <TabsContent value="inbound" className="h-[400px] relative">
-            <div ref={inboundChartRef} className="h-full">
-              <h3 className="font-bold text-xl mb-4 text-center">Call-In vs Missed Call Distribution</h3>
-              <ChartScreenshot targetRef={inboundChartRef} filename="inbound-missed-calls" />
-              {filteredData.length > 0 ? (
-                <ResponsivePie
-                  data={calculateCallSourceData()}
-                  margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                  innerRadius={0.5}
-                  padAngle={0.7}
-                  cornerRadius={3}
-                  colors={{ scheme: 'category10' }}
-                  borderWidth={1}
-                  borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                  arcLabelsTextColor="#333333"
-                  arcLabelsSkipAngle={10}
-                  arcLinkLabelsOffset={0}
-                  arcLinkLabelsSkipAngle={10}
-                  arcLinkLabelsTextOffset={6}
-                  arcLinkLabelsTextColor="#333333"
-                  arcLinkLabelsThickness={2}
-                  arcLinkLabelsColor={{ from: 'color' }}
-                  arcLabelsRadiusOffset={0.6}
-                  enableArcLinkLabels={true}
-                  arcLinkLabel={d => `${d.id}: ${d.value}`}
-                  theme={{
-                    labels: {
-                      text: {
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                      }
-                    },
-                    legends: {
-                      text: {
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                      }
-                    }
-                  }}
-                  legends={[
-                    {
-                      anchor: 'bottom',
-                      direction: 'row',
-                      translateY: 56,
-                      itemWidth: 100,
-                      itemHeight: 18,
-                      itemTextColor: '#333',
-                      symbolSize: 18,
-                      symbolShape: 'circle',
-                      effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
-                    }
-                  ]}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No data available
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Service Operation Type */}
-          <TabsContent value="servicetype" className="h-[500px] relative">
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Service Operation Type</label>
-                <Select value={serviceType} onValueChange={setServiceType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Service Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {getUniqueValues("Service Operation Type").map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Symptom</label>
-                <Select value={symptom} onValueChange={setSymptom}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Symptom" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Symptoms</SelectItem>
-                    {getUniqueValues("Symptom").map(symp => (
-                      <SelectItem key={symp} value={symp}>{symp}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Solution</label>
-                <Select value={solution} onValueChange={setSolution}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Solution" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Solutions</SelectItem>
-                    {getUniqueValues("Solution").map(sol => (
-                      <SelectItem key={sol} value={sol}>{sol}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <TabsContent value="location" className="h-[400px]">
+              <LocationChart data={filteredData} />
+            </TabsContent>
             
-            <div ref={serviceOpChartRef} className="h-[400px]">
-              <h3 className="font-bold text-xl mb-4 text-center">Daily Service Operations</h3>
-              <ChartScreenshot targetRef={serviceOpChartRef} filename="service-operations" />
-              {filteredData.length > 0 ? (
-                <ResponsiveBar
-                  data={calculateDailyServiceData()}
-                  keys={['count']}
-                  indexBy="day"
-                  margin={{ top: 50, right: 50, bottom: 70, left: 60 }}
-                  padding={0.3}
-                  colors={{ scheme: 'nivo' }}
-                  borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-                  axisTop={null}
-                  axisRight={null}
-                  axisBottom={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    legend: 'Day of Month',
-                    legendPosition: 'middle',
-                    legendOffset: 40,
-                    format: (v) => `${v}`
-                  }}
-                  axisLeft={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    legend: 'Count',
-                    legendPosition: 'middle',
-                    legendOffset: -40
-                  }}
-                  labelSkipWidth={12}
-                  labelSkipHeight={12}
-                  labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-                  animate={true}
-                  theme={{
-                    axis: {
-                      ticks: {
+            <TabsContent value="symptom" className="h-[400px]">
+              <SymptomChart data={filteredData} />
+            </TabsContent>
+            
+            <TabsContent value="solution" className="h-[400px]">
+              <SolutionChart data={filteredData} />
+            </TabsContent>
+            
+            <TabsContent value="source" className="h-[400px]">
+              <SourceChart data={filteredData} />
+            </TabsContent>
+            
+            <TabsContent value="hourly" className="h-[400px]">
+              <HourlyChart data={filteredData} />
+            </TabsContent>
+            
+            <TabsContent value="daily" className="h-[400px]">
+              <DailyChart data={filteredData} />
+            </TabsContent>
+            
+            {/* Inbound & Missed Call */}
+            <TabsContent value="inbound" className="h-[450px] relative">
+              <div ref={inboundChartRef} className="h-full">
+                <h3 className="font-bold text-2xl mb-6 text-center">Call-In vs Missed Call Distribution</h3>
+                <ChartScreenshot targetRef={inboundChartRef} filename="inbound-missed-calls" />
+                {filteredData.length > 0 ? (
+                  <ResponsivePie
+                    data={calculateCallSourceData()}
+                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                    innerRadius={0.5}
+                    padAngle={0.7}
+                    cornerRadius={3}
+                    colors={{ scheme: 'category10' }}
+                    borderWidth={1}
+                    borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                    arcLabelsTextColor="#ffffff"
+                    arcLabelsSkipAngle={10}
+                    arcLinkLabelsOffset={0}
+                    arcLinkLabelsSkipAngle={10}
+                    arcLinkLabelsTextOffset={6}
+                    arcLinkLabelsTextColor="#333333"
+                    arcLinkLabelsThickness={2}
+                    arcLinkLabelsColor={{ from: 'color' }}
+                    arcLabelsRadiusOffset={0.6}
+                    enableArcLinkLabels={true}
+                    arcLinkLabel={d => `${d.id}: ${d.value}`}
+                    theme={{
+                      labels: {
                         text: {
-                          fontSize: 12,
-                          fontWeight: 'bold'
+                          fontSize: 16,
+                          fontWeight: 700,
                         }
                       },
-                      legend: {
+                      legends: {
                         text: {
-                          fontSize: 14,
-                          fontWeight: 'bold'
-                        }
-                      }
-                    },
-                    labels: {
-                      text: {
-                        fontSize: 14,
-                        fontWeight: 'bold'
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No data available
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Working Shift */}
-          <TabsContent value="workingshift" className="h-[400px] relative">
-            <div ref={workingShiftChartRef} className="h-full">
-              <h3 className="font-bold text-xl mb-4 text-center">Working Hours vs Non-Working Hours</h3>
-              <ChartScreenshot targetRef={workingShiftChartRef} filename="working-shift" />
-              {filteredData.length > 0 ? (
-                <ResponsivePie
-                  data={calculateWorkingHoursData()}
-                  margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                  innerRadius={0.5}
-                  padAngle={0.7}
-                  cornerRadius={3}
-                  colors={{ scheme: 'paired' }}
-                  borderWidth={1}
-                  borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                  arcLabelsTextColor="#333333"
-                  arcLabelsSkipAngle={10}
-                  arcLinkLabelsOffset={0}
-                  arcLinkLabelsSkipAngle={10}
-                  arcLinkLabelsTextOffset={6}
-                  arcLinkLabelsTextColor="#333333"
-                  arcLinkLabelsThickness={2}
-                  arcLinkLabelsColor={{ from: 'color' }}
-                  arcLabelsRadiusOffset={0.6}
-                  enableArcLinkLabels={true}
-                  arcLinkLabel={d => `${d.id}: ${d.value}`}
-                  theme={{
-                    labels: {
-                      text: {
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                      }
-                    },
-                    legends: {
-                      text: {
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                      }
-                    }
-                  }}
-                  legends={[
-                    {
-                      anchor: 'bottom',
-                      direction: 'row',
-                      translateY: 56,
-                      itemWidth: 180,
-                      itemHeight: 18,
-                      itemTextColor: '#333',
-                      symbolSize: 18,
-                      symbolShape: 'circle',
-                      effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
-                    }
-                  ]}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No data available
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Suggestion / Top 5 Symptoms */}
-          <TabsContent value="suggestion" className="h-[400px] relative">
-            <div ref={topSymptomsChartRef} className="h-full">
-              <h3 className="font-bold text-xl mb-4 text-center">Top 5 Symptoms</h3>
-              <ChartScreenshot targetRef={topSymptomsChartRef} filename="top-symptoms" />
-              {filteredData.length > 0 ? (
-                <ResponsiveBar
-                  data={calculateTopSymptoms()}
-                  keys={['value']}
-                  indexBy="id"
-                  margin={{ top: 50, right: 50, bottom: 130, left: 60 }}
-                  padding={0.3}
-                  colors={{ scheme: 'red_yellow_blue' }}
-                  colorBy="indexValue"
-                  borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-                  axisTop={null}
-                  axisRight={null}
-                  axisBottom={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 45,
-                    legend: 'Symptom',
-                    legendPosition: 'middle',
-                    legendOffset: 80
-                  }}
-                  axisLeft={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    legend: 'Count',
-                    legendPosition: 'middle',
-                    legendOffset: -40
-                  }}
-                  labelSkipWidth={12}
-                  labelSkipHeight={12}
-                  labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-                  animate={true}
-                  theme={{
-                    axis: {
-                      ticks: {
-                        text: {
-                          fontSize: 12,
-                          fontWeight: 'bold'
+                          fontSize: 16,
+                          fontWeight: 700,
                         }
                       },
-                      legend: {
-                        text: {
+                      tooltip: {
+                        container: {
                           fontSize: 14,
-                          fontWeight: 'bold'
+                          fontWeight: 500,
+                          padding: 12,
+                          borderRadius: 6
                         }
                       }
-                    },
-                    labels: {
-                      text: {
-                        fontSize: 12,
-                        fontWeight: 'bold'
+                    }}
+                    legends={[
+                      {
+                        anchor: 'bottom',
+                        direction: 'row',
+                        translateY: 56,
+                        itemWidth: 100,
+                        itemHeight: 18,
+                        itemTextColor: '#333',
+                        symbolSize: 18,
+                        symbolShape: 'circle',
+                        effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
                       }
-                    }
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No data available
+                    ]}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No data available
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            {/* Service Operation Type */}
+            <TabsContent value="servicetype" className="h-[550px] relative">
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Operation Type</label>
+                  <Select value={serviceType} onValueChange={setServiceType}>
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                      <SelectValue placeholder="Select Service Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {getUniqueValues("Service Operation Type").map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-            </div>
-          </TabsContent>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Symptom</label>
+                  <Select value={symptom} onValueChange={setSymptom}>
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                      <SelectValue placeholder="Select Symptom" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Symptoms</SelectItem>
+                      {getUniqueValues("Symptom").map(symp => (
+                        <SelectItem key={symp} value={symp}>{symp}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Solution</label>
+                  <Select value={solution} onValueChange={setSolution}>
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                      <SelectValue placeholder="Select Solution" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Solutions</SelectItem>
+                      {getUniqueValues("Solution").map(sol => (
+                        <SelectItem key={sol} value={sol}>{sol}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div ref={serviceOpChartRef} className="h-[450px]">
+                <h3 className="font-bold text-2xl mb-6 text-center">Daily Service Operations</h3>
+                <ChartScreenshot targetRef={serviceOpChartRef} filename="service-operations" />
+                {filteredData.length > 0 ? (
+                  <ResponsiveBar
+                    data={calculateDailyServiceData()}
+                    keys={['count']}
+                    indexBy="day"
+                    margin={{ top: 50, right: 50, bottom: 70, left: 60 }}
+                    padding={0.3}
+                    colors={{ scheme: 'nivo' }}
+                    borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    axisTop={null}
+                    axisRight={null}
+                    axisBottom={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 0,
+                      legend: 'Day of Month',
+                      legendPosition: 'middle',
+                      legendOffset: 45,
+                      format: (v) => `${v}`
+                    }}
+                    axisLeft={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 0,
+                      legend: 'Count',
+                      legendPosition: 'middle',
+                      legendOffset: -45
+                    }}
+                    labelSkipWidth={12}
+                    labelSkipHeight={12}
+                    labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    animate={true}
+                    theme={{
+                      axis: {
+                        domain: {
+                          line: {
+                            strokeWidth: 2,
+                            stroke: '#777777'
+                          }
+                        },
+                        ticks: {
+                          line: {
+                            strokeWidth: 1,
+                            stroke: '#777777'
+                          },
+                          text: {
+                            fontSize: 14,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
+                        },
+                        legend: {
+                          text: {
+                            fontSize: 16,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
+                        }
+                      },
+                      labels: {
+                        text: {
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fill: '#333333'
+                        }
+                      },
+                      tooltip: {
+                        container: {
+                          fontSize: 14,
+                          fontWeight: 500,
+                          padding: 12,
+                          borderRadius: 6
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No data available
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            {/* Working Shift */}
+            <TabsContent value="workingshift" className="h-[450px] relative">
+              <div ref={workingShiftChartRef} className="h-full">
+                <h3 className="font-bold text-2xl mb-6 text-center">Working Hours vs Non-Working Hours</h3>
+                <ChartScreenshot targetRef={workingShiftChartRef} filename="working-shift" />
+                {filteredData.length > 0 ? (
+                  <ResponsivePie
+                    data={calculateWorkingHoursData()}
+                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                    innerRadius={0.5}
+                    padAngle={0.7}
+                    cornerRadius={3}
+                    colors={{ scheme: 'paired' }}
+                    borderWidth={1}
+                    borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                    arcLabelsTextColor="#ffffff"
+                    arcLabelsSkipAngle={10}
+                    arcLinkLabelsOffset={0}
+                    arcLinkLabelsSkipAngle={10}
+                    arcLinkLabelsTextOffset={6}
+                    arcLinkLabelsTextColor="#333333"
+                    arcLinkLabelsThickness={2}
+                    arcLinkLabelsColor={{ from: 'color' }}
+                    arcLabelsRadiusOffset={0.6}
+                    enableArcLinkLabels={true}
+                    arcLinkLabel={d => `${d.id}: ${d.value}`}
+                    theme={{
+                      labels: {
+                        text: {
+                          fontSize: 16,
+                          fontWeight: 700,
+                        }
+                      },
+                      legends: {
+                        text: {
+                          fontSize: 16,
+                          fontWeight: 700,
+                        }
+                      },
+                      tooltip: {
+                        container: {
+                          fontSize: 14,
+                          fontWeight: 500,
+                          padding: 12,
+                          borderRadius: 6
+                        }
+                      }
+                    }}
+                    legends={[
+                      {
+                        anchor: 'bottom',
+                        direction: 'row',
+                        translateY: 56,
+                        itemWidth: 180,
+                        itemHeight: 18,
+                        itemTextColor: '#333',
+                        symbolSize: 18,
+                        symbolShape: 'circle',
+                        effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
+                      }
+                    ]}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No data available
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            {/* Suggestion / Top 5 Symptoms */}
+            <TabsContent value="suggestion" className="h-[450px] relative">
+              <div ref={topSymptomsChartRef} className="h-full">
+                <h3 className="font-bold text-2xl mb-6 text-center">Top 5 Symptoms</h3>
+                <ChartScreenshot targetRef={topSymptomsChartRef} filename="top-symptoms" />
+                {filteredData.length > 0 ? (
+                  <ResponsiveBar
+                    data={calculateTopSymptoms()}
+                    keys={['value']}
+                    indexBy="id"
+                    margin={{ top: 50, right: 50, bottom: 130, left: 60 }}
+                    padding={0.3}
+                    colors={{ scheme: 'red_yellow_blue' }}
+                    colorBy="indexValue"
+                    borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    axisTop={null}
+                    axisRight={null}
+                    axisBottom={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 45,
+                      legend: 'Symptom',
+                      legendPosition: 'middle',
+                      legendOffset: 90
+                    }}
+                    axisLeft={{
+                      tickSize: 5,
+                      tickPadding: 5,
+                      tickRotation: 0,
+                      legend: 'Count',
+                      legendPosition: 'middle',
+                      legendOffset: -45
+                    }}
+                    labelSkipWidth={12}
+                    labelSkipHeight={12}
+                    labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                    animate={true}
+                    theme={{
+                      axis: {
+                        domain: {
+                          line: {
+                            strokeWidth: 2,
+                            stroke: '#777777'
+                          }
+                        },
+                        ticks: {
+                          line: {
+                            strokeWidth: 1,
+                            stroke: '#777777'
+                          },
+                          text: {
+                            fontSize: 14,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
+                        },
+                        legend: {
+                          text: {
+                            fontSize: 16,
+                            fontWeight: 700,
+                            fill: '#333333'
+                          }
+                        }
+                      },
+                      labels: {
+                        text: {
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fill: '#ffffff'
+                        }
+                      },
+                      tooltip: {
+                        container: {
+                          fontSize: 14,
+                          fontWeight: 500,
+                          padding: 12,
+                          borderRadius: 6
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No data available
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </div>
         </Tabs>
       </Card>
       
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Dashboard Summary</h2>
+      <Card className="p-6 shadow-lg border-2 border-gray-200">
+        <h2 className="text-2xl font-bold mb-6 text-primary">Dashboard Summary</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-100 p-4 rounded-lg text-center">
-            <p className="text-sm text-gray-600">Total Calls</p>
-            <p className="text-2xl font-bold">{filteredData.length}</p>
+          <div className="bg-blue-100 p-6 rounded-lg text-center shadow-md border border-blue-200">
+            <p className="text-sm font-medium text-blue-800 mb-1">Total Calls</p>
+            <p className="text-3xl font-bold text-blue-900">{filteredData.length}</p>
           </div>
-          <div className="bg-green-100 p-4 rounded-lg text-center">
-            <p className="text-sm text-gray-600">Locations</p>
-            <p className="text-2xl font-bold">
+          <div className="bg-green-100 p-6 rounded-lg text-center shadow-md border border-green-200">
+            <p className="text-sm font-medium text-green-800 mb-1">Locations</p>
+            <p className="text-3xl font-bold text-green-900">
               {new Set(filteredData.map(item => item.Location)).size}
             </p>
           </div>
-          <div className="bg-yellow-100 p-4 rounded-lg text-center">
-            <p className="text-sm text-gray-600">Avg Duration</p>
-            <p className="text-2xl font-bold">
+          <div className="bg-yellow-100 p-6 rounded-lg text-center shadow-md border border-yellow-200">
+            <p className="text-sm font-medium text-yellow-800 mb-1">Avg Duration</p>
+            <p className="text-3xl font-bold text-yellow-900">
               {filteredData.length ? 
                 calculateAvgDuration(filteredData) : "00:00"}
             </p>
           </div>
-          <div className="bg-purple-100 p-4 rounded-lg text-center">
-            <p className="text-sm text-gray-600">Service Types</p>
-            <p className="text-2xl font-bold">
+          <div className="bg-purple-100 p-6 rounded-lg text-center shadow-md border border-purple-200">
+            <p className="text-sm font-medium text-purple-800 mb-1">Service Types</p>
+            <p className="text-3xl font-bold text-purple-900">
               {new Set(filteredData.map(item => item["Service Operation Type"])).size}
             </p>
           </div>

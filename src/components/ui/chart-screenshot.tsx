@@ -21,6 +21,12 @@ const ChartScreenshot: React.FC<ChartScreenshotProps> = ({
     try {
       const html2canvas = (await import('html2canvas')).default;
       
+      toast({
+        title: "Capturing screenshot...",
+        description: "Please wait a moment",
+        variant: "default",
+      });
+      
       const canvas = await html2canvas(targetRef.current, {
         scale: 2, // Higher scale for better quality
         backgroundColor: null,
@@ -68,11 +74,11 @@ const ChartScreenshot: React.FC<ChartScreenshotProps> = ({
     <Button 
       onClick={takeScreenshot} 
       variant="outline" 
-      size="sm"
-      className="absolute top-2 right-2 z-10 bg-white"
+      size="icon"
+      className="absolute top-2 right-2 z-10 bg-white shadow-md rounded-full h-8 w-8 p-1"
     >
-      <Camera className="mr-1 h-4 w-4" />
-      Capture
+      <Camera className="h-4 w-4 text-gray-600" />
+      <span className="sr-only">Capture</span>
     </Button>
   );
 };
