@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveBar } from "@nivo/bar";
@@ -13,6 +14,7 @@ import SourceChart from "@/components/charts/SourceChart";
 import HourlyChart from "@/components/charts/HourlyChart";
 import DailyChart from "@/components/charts/DailyChart";
 import LocationChart from "@/components/charts/LocationChart";
+import { serviceTypeCategories } from "@/data/serviceTypeCategories";
 
 interface DashboardProps {
   data: any[];
@@ -25,6 +27,7 @@ const Dashboard = ({ data }: DashboardProps) => {
   const [serviceType, setServiceType] = useState("all");
   const [symptom, setSymptom] = useState("all");
   const [solution, setSolution] = useState("all");
+  const [availableSymptoms, setAvailableSymptoms] = useState<string[]>([]);
   
   // Refs for chart containers to enable screenshots
   const inboundChartRef = useRef<HTMLDivElement>(null);
@@ -60,6 +63,20 @@ const Dashboard = ({ data }: DashboardProps) => {
     return Array.from(values);
   };
 
+  // Handle service type change
+  const handleServiceTypeChange = (value: string) => {
+    setServiceType(value);
+    setSymptom("all"); // Reset symptom when changing service type
+    
+    // Update available symptoms based on service type
+    if (value === "all") {
+      setAvailableSymptoms(getUniqueValues("Symptom"));
+    } else {
+      const category = serviceTypeCategories.find(cat => cat.name === value);
+      setAvailableSymptoms(category?.symptoms || []);
+    }
+  };
+
   // Filter data for service operation charts
   const filterServiceData = () => {
     let filtered = [...filteredData];
@@ -79,7 +96,7 @@ const Dashboard = ({ data }: DashboardProps) => {
     return filtered;
   };
 
-  // Calculate inbound vs missed calls data
+  // Calculate inbound vs missed calls data - Fixed to properly filter by Source
   const calculateCallSourceData = () => {
     const counts = {
       "Call-In": 0,
@@ -88,8 +105,11 @@ const Dashboard = ({ data }: DashboardProps) => {
     
     filteredData.forEach(item => {
       const source = item["Source"];
-      if (source === "Call-In") counts["Call-In"]++;
-      else if (source === "Missed Call") counts["Missed Call"]++;
+      if (source === "Call-In") {
+        counts["Call-In"]++;
+      } else if (source === "Missed Call") {
+        counts["Missed Call"]++;
+      }
     });
     
     return [
@@ -183,6 +203,9 @@ const Dashboard = ({ data }: DashboardProps) => {
   // Update filtered data when main data changes
   useEffect(() => {
     setFilteredData(data);
+    
+    // Initialize available symptoms
+    setAvailableSymptoms(getUniqueValues("Symptom"));
   }, [data]);
 
   return (
@@ -193,7 +216,7 @@ const Dashboard = ({ data }: DashboardProps) => {
         {/* Date filter section */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8 bg-gray-50 p-4 rounded-lg">
           <div className="flex-1">
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Start Date</label>
+            <Label className="text-sm font-medium text-gray-700 mb-1 block">Start Date</Label>
             <Input
               type="date"
               value={startDate}
@@ -202,7 +225,7 @@ const Dashboard = ({ data }: DashboardProps) => {
             />
           </div>
           <div className="flex-1">
-            <label className="text-sm font-medium text-gray-700 mb-1 block">End Date</label>
+            <Label className="text-sm font-medium text-gray-700 mb-1 block">End Date</Label>
             <Input
               type="date"
               value={endDate}
@@ -235,51 +258,51 @@ const Dashboard = ({ data }: DashboardProps) => {
             <TabsTrigger value="suggestion" className="font-semibold py-2.5">Suggestion</TabsTrigger>
           </TabsList>
           
-          <div className="border border-gray-200 rounded-lg p-4 bg-white">
-            <TabsContent value="location" className="h-[400px]">
+          <div className="border border-gray-200 rounded-lg p-6 bg-white">
+            <TabsContent value="location" className="h-[500px]">
               <LocationChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="symptom" className="h-[400px]">
+            <TabsContent value="symptom" className="h-[500px]">
               <SymptomChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="solution" className="h-[400px]">
+            <TabsContent value="solution" className="h-[500px]">
               <SolutionChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="source" className="h-[400px]">
+            <TabsContent value="source" className="h-[500px]">
               <SourceChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="hourly" className="h-[400px]">
+            <TabsContent value="hourly" className="h-[500px]">
               <HourlyChart data={filteredData} />
             </TabsContent>
             
-            <TabsContent value="daily" className="h-[400px]">
+            <TabsContent value="daily" className="h-[500px]">
               <DailyChart data={filteredData} />
             </TabsContent>
             
-            {/* Inbound & Missed Call */}
-            <TabsContent value="inbound" className="h-[450px] relative">
+            {/* Inbound & Missed Call - Fixed to correctly filter data by Source */}
+            <TabsContent value="inbound" className="h-[500px] relative">
               <div ref={inboundChartRef} className="h-full">
-                <h3 className="font-bold text-2xl mb-6 text-center">Call-In vs Missed Call Distribution</h3>
+                <h3 className="font-bold text-3xl mb-8 text-center">Call-In vs Missed Call Distribution</h3>
                 <ChartScreenshot targetRef={inboundChartRef} filename="inbound-missed-calls" />
                 {filteredData.length > 0 ? (
                   <ResponsivePie
                     data={calculateCallSourceData()}
-                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                    margin={{ top: 40, right: 100, bottom: 80, left: 100 }}
                     innerRadius={0.5}
                     padAngle={0.7}
                     cornerRadius={3}
-                    colors={{ scheme: 'category10' }}
+                    colors={['#6366f1', '#f97316']} // Custom colors for better visibility
                     borderWidth={1}
                     borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
                     arcLabelsTextColor="#ffffff"
                     arcLabelsSkipAngle={10}
-                    arcLinkLabelsOffset={0}
+                    arcLinkLabelsOffset={3}
                     arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextOffset={6}
+                    arcLinkLabelsTextOffset={8}
                     arcLinkLabelsTextColor="#333333"
                     arcLinkLabelsThickness={2}
                     arcLinkLabelsColor={{ from: 'color' }}
@@ -313,58 +336,58 @@ const Dashboard = ({ data }: DashboardProps) => {
                         anchor: 'bottom',
                         direction: 'row',
                         translateY: 56,
-                        itemWidth: 100,
-                        itemHeight: 18,
+                        itemWidth: 120,
+                        itemHeight: 20,
                         itemTextColor: '#333',
-                        symbolSize: 18,
+                        symbolSize: 20,
                         symbolShape: 'circle',
                         effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
                       }
                     ]}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="flex items-center justify-center h-full text-gray-400 text-xl">
                     No data available
                   </div>
                 )}
               </div>
             </TabsContent>
             
-            {/* Service Operation Type */}
-            <TabsContent value="servicetype" className="h-[550px] relative">
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+            {/* Service Operation Type - Enhanced with dynamic symptom filtering */}
+            <TabsContent value="servicetype" className="h-[600px] relative">
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-lg">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Operation Type</label>
-                  <Select value={serviceType} onValueChange={setServiceType}>
-                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                  <Label className="block text-base font-semibold text-gray-700 mb-2">Service Operation Type</Label>
+                  <Select value={serviceType} onValueChange={handleServiceTypeChange}>
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20 h-12">
                       <SelectValue placeholder="Select Service Type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      {getUniqueValues("Service Operation Type").map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {serviceTypeCategories.map(category => (
+                        <SelectItem key={category.name} value={category.name}>{category.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Symptom</label>
+                  <Label className="block text-base font-semibold text-gray-700 mb-2">Symptom</Label>
                   <Select value={symptom} onValueChange={setSymptom}>
-                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20 h-12">
                       <SelectValue placeholder="Select Symptom" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Symptoms</SelectItem>
-                      {getUniqueValues("Symptom").map(symp => (
+                      {availableSymptoms.map(symp => (
                         <SelectItem key={symp} value={symp}>{symp}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Solution</label>
+                  <Label className="block text-base font-semibold text-gray-700 mb-2">Solution</Label>
                   <Select value={solution} onValueChange={setSolution}>
-                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="border-2 focus:ring-2 focus:ring-primary/20 h-12">
                       <SelectValue placeholder="Select Solution" />
                     </SelectTrigger>
                     <SelectContent>
@@ -377,8 +400,8 @@ const Dashboard = ({ data }: DashboardProps) => {
                 </div>
               </div>
               
-              <div ref={serviceOpChartRef} className="h-[450px]">
-                <h3 className="font-bold text-2xl mb-6 text-center">Daily Service Operations</h3>
+              <div ref={serviceOpChartRef} className="h-[500px]">
+                <h3 className="font-bold text-3xl mb-8 text-center">Daily Service Operations</h3>
                 <ChartScreenshot targetRef={serviceOpChartRef} filename="service-operations" />
                 {filteredData.length > 0 ? (
                   <ResponsiveBar
@@ -443,7 +466,7 @@ const Dashboard = ({ data }: DashboardProps) => {
                         text: {
                           fontSize: 14,
                           fontWeight: 700,
-                          fill: '#333333'
+                          fill: '#ffffff'
                         }
                       },
                       tooltip: {
@@ -457,33 +480,33 @@ const Dashboard = ({ data }: DashboardProps) => {
                     }}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="flex items-center justify-center h-full text-gray-400 text-xl">
                     No data available
                   </div>
                 )}
               </div>
             </TabsContent>
             
-            {/* Working Shift */}
-            <TabsContent value="workingshift" className="h-[450px] relative">
+            {/* Working Shift - Improved styling */}
+            <TabsContent value="workingshift" className="h-[500px] relative">
               <div ref={workingShiftChartRef} className="h-full">
-                <h3 className="font-bold text-2xl mb-6 text-center">Working Hours vs Non-Working Hours</h3>
+                <h3 className="font-bold text-3xl mb-8 text-center">Working Hours vs Non-Working Hours</h3>
                 <ChartScreenshot targetRef={workingShiftChartRef} filename="working-shift" />
                 {filteredData.length > 0 ? (
                   <ResponsivePie
                     data={calculateWorkingHoursData()}
-                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                    margin={{ top: 40, right: 100, bottom: 80, left: 100 }}
                     innerRadius={0.5}
                     padAngle={0.7}
                     cornerRadius={3}
-                    colors={{ scheme: 'paired' }}
+                    colors={['#10b981', '#6366f1']} // Custom colors for better contrast
                     borderWidth={1}
                     borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
                     arcLabelsTextColor="#ffffff"
                     arcLabelsSkipAngle={10}
-                    arcLinkLabelsOffset={0}
+                    arcLinkLabelsOffset={3}
                     arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextOffset={6}
+                    arcLinkLabelsTextOffset={8}
                     arcLinkLabelsTextColor="#333333"
                     arcLinkLabelsThickness={2}
                     arcLinkLabelsColor={{ from: 'color' }}
@@ -517,27 +540,27 @@ const Dashboard = ({ data }: DashboardProps) => {
                         anchor: 'bottom',
                         direction: 'row',
                         translateY: 56,
-                        itemWidth: 180,
-                        itemHeight: 18,
+                        itemWidth: 200,
+                        itemHeight: 20,
                         itemTextColor: '#333',
-                        symbolSize: 18,
+                        symbolSize: 20,
                         symbolShape: 'circle',
                         effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
                       }
                     ]}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="flex items-center justify-center h-full text-gray-400 text-xl">
                     No data available
                   </div>
                 )}
               </div>
             </TabsContent>
             
-            {/* Suggestion / Top 5 Symptoms */}
-            <TabsContent value="suggestion" className="h-[450px] relative">
+            {/* Suggestion / Top 5 Symptoms - Enhanced styling with alert colors */}
+            <TabsContent value="suggestion" className="h-[500px] relative">
               <div ref={topSymptomsChartRef} className="h-full">
-                <h3 className="font-bold text-2xl mb-6 text-center">Top 5 Symptoms</h3>
+                <h3 className="font-bold text-3xl mb-8 text-center">Top 5 Symptoms</h3>
                 <ChartScreenshot targetRef={topSymptomsChartRef} filename="top-symptoms" />
                 {filteredData.length > 0 ? (
                   <ResponsiveBar
@@ -616,7 +639,7 @@ const Dashboard = ({ data }: DashboardProps) => {
                     }}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="flex items-center justify-center h-full text-gray-400 text-xl">
                     No data available
                   </div>
                 )}

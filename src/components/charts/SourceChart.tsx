@@ -22,9 +22,9 @@ const SourceChart = ({ data }: SourceChartProps) => {
 
   return (
     <div className="h-full" ref={chartRef}>
-      <h3 className="text-2xl font-bold mb-6 text-center">Call Sources Distribution</h3>
+      <h3 className="text-3xl font-bold mb-6 text-center">Call Sources Distribution</h3>
       <ChartScreenshot targetRef={chartRef} filename="source-distribution" />
-      <div className="h-[350px]">
+      <div className="h-[400px]">
         {processedData.length > 0 ? (
           <ResponsivePie
             data={processedData}
@@ -89,7 +89,7 @@ const SourceChart = ({ data }: SourceChartProps) => {
             }}
           />
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-400">
+          <div className="h-full flex items-center justify-center text-gray-400 text-xl">
             No data available
           </div>
         )}
